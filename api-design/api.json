@@ -268,17 +268,7 @@
             "type": "string"
           },
           "sdkVersion": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "platform": {
-            "type": "string",
-            "enum": [
-              "Android",
-              "iOS"
-            ]
+            "type": "string"
           },
           "function": {
             "type": "array",
@@ -298,11 +288,8 @@
           "name": {
             "type": "string"
           },
-          "compatibleInterface": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+          "sdkInterface": {
+            "type": "string"
           },
           "stockCodes": {
             "type": "array",
