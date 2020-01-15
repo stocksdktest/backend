@@ -1,0 +1,14 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: leasing-schema
+  profiles:
+    active: prod
+  data:
+    mongodb:
+      authentication-database: test
+      username: my_user
+      password: password123
+      host: sddm-mongodb
+      database: test

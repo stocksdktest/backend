@@ -1,469 +1,446 @@
-  {
-    "swagger": "2.0",
-    "info": {
-      "version": "1.0.0",
-      "title": "SDK测试管理平台"
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "SDK测试管理平台"
+  },
+  "basePath": "",
+  "tags": [
+    {
+      "name": "TC_MANAGE",
+      "description": "测试用例管理"
     },
-    "basePath": "",
-    "tags": [
-      {
-        "name": "TC_MANAGE",
-        "description": "测试用例管理"
-      },
-      {
-        "name": "PARAM_MANAGE",
-        "description": "参数配置管理"
-      },
-      {
-        "name": "TEST_PLAN",
-        "description": "测试计划"
-      }
-    ],
-    "schemes": [
-      "http"
-    ],
-    "paths": {
-      "/sdk/version": {
-        "get": {
-          "tags": [
-            "TC_MANAGE"
-          ],
-          "summary": "查询SDK版本",
-          "operationId": "querySDKVersion",
-          "consumes": [
-            "application/json"
-          ],
-          "produces": [
-            "application/json"
-          ],
-          "parameters": [
-            {
-              "in": "query",
-              "name": "version"
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "ok",
-              "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/definitions/SDKVersion"
-                }
-              }
-            }
+    {
+      "name": "PARAM_MANAGE",
+      "description": "参数配置管理"
+    },
+    {
+      "name": "TEST_PLAN",
+      "description": "测试计划"
+    }
+  ],
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/sdk/version": {
+      "get": {
+        "tags": [
+          "TC_MANAGE"
+        ],
+        "summary": "查询SDK版本",
+        "operationId": "querySDKVersion",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "version"
           }
-        }
-      },
-      "/sdk/interface": {
-        "get": {
-          "tags": [
-            "TC_MANAGE"
-          ],
-          "summary": "查询SDK接口",
-          "operationId": "querySDKInterface",
-          "consumes": [
-            "application/json"
-          ],
-          "produces": [
-            "application/json"
-          ],
-          "parameters": [
-            {
-              "in": "query",
-              "name": "name"
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "ok",
-              "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/definitions/SDKInterface"
-                }
-              }
-            }
-          }
-        }
-      },
-      "/testcase/config": {
-        "get": {
-          "tags": [
-            "PARAM_MANAGE"
-          ],
-          "summary": "查询测试用例配置",
-          "operationId": "queryTestcaseConfig",
-          "consumes": [
-            "application/json"
-          ],
-          "produces": [
-            "application/json"
-          ],
-          "parameters": [
-            {
-              "in": "query",
-              "name": "name"
-            },
-            {
-              "in": "query",
-              "name": "compatibleInterface"
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "ok",
-              "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/definitions/TestcaseConfig"
-                }
-              }
-            }
-          }
-        }
-      },
-      "/stock_class": {
-        "get": {
-          "tags": [
-            "PARAM_MANAGE"
-          ],
-          "summary": "查询股票类型",
-          "operationId": "queryStockClass",
-          "consumes": [
-            "application/json"
-          ],
-          "produces": [
-            "application/json"
-          ],
-          "parameters": [
-            {
-              "in": "query",
-              "name": "classID"
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "ok",
-              "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/definitions/StockClass"
-                }
-              }
-            }
-          }
-        }
-      },
-      "/test_env": {
-        "get": {
-          "tags": [
-            "PARAM_MANAGE"
-          ],
-          "summary": "查询测试环境配置",
-          "operationId": "queryTestEnv",
-          "consumes": [
-            "application/json"
-          ],
-          "produces": [
-            "application/json"
-          ],
-          "parameters": [
-            {
-              "in": "query",
-              "name": "envType",
-              "type": "string",
-              "enum": [
-                "Test",
-                "Simulation",
-                "Production"
-              ]
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "ok",
-              "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/definitions/TestEnv"
-                }
-              }
-            }
-          }
-        }
-      },
-      "/test_plan": {
-        "get": {
-          "tags": [
-            "TEST_PLAN"
-          ],
-          "summary": "测试计划",
-          "operationId": "queryTestplan",
-          "consumes": [
-            "application/json"
-          ],
-          "produces": [
-            "application/json"
-          ],
-          "parameters": [
-            {
-              "in": "query",
-              "name": "name"
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "ok",
-              "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/definitions/TestPlan"
-                }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/SDKVersion"
               }
             }
           }
         }
       }
     },
-    "definitions": {
-      "SDKVersion": {
-        "type": "object",
-        "properties": {
-          "uid": {
-            "type": "string"
-          },
-          "version": {
-            "type": "string"
-          },
-          "iteration": {
-            "type": "string"
-          },
-          "platform": {
-            "type": "string",
-            "enum": [
-              "Android",
-              "iOS"
-            ]
-          },
-          "resourceURL": {
-            "type": "string"
-          },
-          "uploadTime": {
-            "type": "string",
-            "format": "date-time"
+    "/sdk/interface": {
+      "get": {
+        "tags": [
+          "TC_MANAGE"
+        ],
+        "summary": "查询SDK接口",
+        "operationId": "querySDKInterface",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "name"
           }
-        }
-      },
-      "SDKInterface": {
-        "type": "object",
-        "properties": {
-          "uid": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "sdkVersion": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "platform": {
-            "type": "string",
-            "enum": [
-              "Android",
-              "iOS"
-            ]
-          },
-          "function": {
-            "type": "array",
-            "items": {
-              "type": "string"
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/SDKInterface"
+              }
             }
           }
         }
-      },
-      "TestcaseConfig": {
-        "type": "object",
-        "description": "测试用例参数",
-        "properties": {
-          "uid": {
-            "type": "string"
+      }
+    },
+    "/testcase/config": {
+      "get": {
+        "tags": [
+          "PARAM_MANAGE"
+        ],
+        "summary": "查询测试用例配置",
+        "operationId": "queryTestcaseConfig",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "name"
           },
-          "name": {
-            "type": "string"
-          },
-          "compatibleInterface": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "stockCodes": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "extraParams": {
-            "type": "string"
+          {
+            "in": "query",
+            "name": "compatibleInterface"
           }
-        }
-      },
-      "StockClass": {
-        "type": "object",
-        "description": "股票分类",
-        "properties": {
-          "classID": {
-            "type": "string"
-          },
-          "className": {
-            "type": "string"
-          },
-          "stockCodes": {
-            "type": "array",
-            "items": {
-              "type": "string"
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TestcaseConfig"
+              }
             }
           }
         }
-      },
-      "TestEnv": {
-        "type": "object",
-        "description": "测试环境",
-        "properties": {
-          "envType": {
+      }
+    },
+    "/stock_class": {
+      "get": {
+        "tags": [
+          "PARAM_MANAGE"
+        ],
+        "summary": "查询股票类型",
+        "operationId": "queryStockClass",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "classID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/StockClass"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test_env": {
+      "get": {
+        "tags": [
+          "PARAM_MANAGE"
+        ],
+        "summary": "查询测试环境配置",
+        "operationId": "queryTestEnv",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "envType",
             "type": "string",
             "enum": [
               "Test",
               "Simulation",
               "Production"
             ]
-          },
-          "sites": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "type": "string"
-                },
-                "ip": {
-                  "type": "string"
-                }
-              }              
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TestEnv"
+              }
             }
           }
         }
-      },
-      "TestPlan": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "pattern": {
-            "type": "string",
-            "enum": [
-              "AndroidAndiOS",
-              "TestEnv",
-              "Competition"
-            ]
-          },
-          "marketLevel": {
-            "type": "string"
-          },
-          "marketPerms": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "casesConfig": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "testcaseConfig": {
-                  "$ref": "#/definitions/TestcaseConfig"
-                },
-                "roundTimes": {
-                  "type": "number"
-                },
-                "roundIntervalSec": {
-                  "type": "number"
-                },
-                "enable": {
-                  "type": "boolean"
-                }                
+      }
+    },
+    "/test_plan": {
+      "get": {
+        "tags": [
+          "TEST_PLAN"
+        ],
+        "summary": "测试计划",
+        "operationId": "queryTestplan",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "name"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TestPlan"
               }
             }
-          },
-          "comparatorArgs": {
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "SDKVersion": {
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "iteration": {
+          "type": "string"
+        },
+        "platform": {
+          "type": "string",
+          "enum": [
+            "Android",
+            "iOS"
+          ]
+        },
+        "resourceURL": {
+          "type": "string"
+        },
+        "uploadTime": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "SDKInterface": {
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "sdkVersion": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "platform": {
+          "type": "string",
+          "enum": [
+            "Android",
+            "iOS"
+          ]
+        },
+        "function": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "TestcaseConfig": {
+      "type": "object",
+      "description": "测试用例参数",
+      "properties": {
+        "uid": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "compatibleInterface": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "stockCodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "extraParams": {
+          "type": "string"
+        }
+      }
+    },
+    "StockClass": {
+      "type": "object",
+      "description": "股票分类",
+      "properties": {
+        "classID": {
+          "type": "string"
+        },
+        "className": {
+          "type": "string"
+        },
+        "stockCodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "TestEnv": {
+      "type": "object",
+      "description": "测试环境",
+      "properties": {
+        "envType": {
+          "type": "string",
+          "enum": [
+            "Test",
+            "Simulation",
+            "Production"
+          ]
+        },
+        "sites": {
+          "type": "array",
+          "items": {
             "type": "object",
             "properties": {
-              "AndroidAndiOS": {
-                "type": "object",
-                "properties": {
-                  "versionAndroid": {
-                    "type": "string"
-                  },
-                  "versioniOS": {
-                    "type": "string"
-                  },
-                  "testEnv": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "name": {
-                          "type": "string"
-                        },
-                        "ip": {
-                          "type": "string"
-                        }
-                      }              
-                    }
-                  }
-                }
+              "name": {
+                "type": "string"
               },
-              "TestEnv": {
-                "type": "object",
-                "properties": {
-                  "sdkVersion": {
-                    "type": "string"
-                  },
-                  "testEnvs": {
-                    "type": "array",
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "name": {
-                            "type": "string"
-                          },
-                          "ip": {
-                            "type": "string"
-                          }
-                        }              
+              "ip": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "TestPlan": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "pattern": {
+          "type": "string",
+          "enum": [
+            "AndroidAndiOS",
+            "TestEnv",
+            "Competition"
+          ]
+        },
+        "marketLevel": {
+          "type": "string"
+        },
+        "marketPerms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "casesConfig": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "testcaseConfig": {
+                "$ref": "#/definitions/TestcaseConfig"
+              },
+              "roundTimes": {
+                "type": "number"
+              },
+              "roundIntervalSec": {
+                "type": "number"
+              },
+              "enable": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "comparatorArgs": {
+          "type": "object",
+          "properties": {
+            "AndroidAndiOS": {
+              "type": "object",
+              "properties": {
+                "versionAndroid": {
+                  "type": "string"
+                },
+                "versioniOS": {
+                  "type": "string"
+                },
+                "testEnv": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "ip": {
+                        "type": "string"
                       }
                     }
                   }
-                }   
-              },
-              "Competition": {
-                "type": "object",
-                "properties": {
-                  "sdkVersion": {
-                    "type": "string"
-                  },
-                  "testEnv": {
+                }
+              }
+            },
+            "TestEnv": {
+              "type": "object",
+              "properties": {
+                "sdkVersion": {
+                  "type": "string"
+                },
+                "testEnvs": {
+                  "type": "array",
+                  "items": {
                     "type": "array",
                     "items": {
                       "type": "object",
@@ -474,7 +451,29 @@
                         "ip": {
                           "type": "string"
                         }
-                      }              
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "Competition": {
+              "type": "object",
+              "properties": {
+                "sdkVersion": {
+                  "type": "string"
+                },
+                "testEnv": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "ip": {
+                        "type": "string"
+                      }
                     }
                   }
                 }
@@ -485,3 +484,4 @@
       }
     }
   }
+}

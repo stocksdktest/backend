@@ -1,0 +1,41 @@
+version: '2'
+# 开发环境下的docker-compose
+services:
+  sddm-mongodb:
+    image: registry.cn-hangzhou.aliyuncs.com/zhongchuang/mongodb_northwind:v2
+    container_name: sddm-mongodb
+    restart: always
+    environment:
+      - MONGODB_USERNAME=my_user
+      - MONGODB_PASSWORD=password123
+      - MONGODB_DATABASE=test
+    volumes: # 设置映射目录
+      - ./mongodb/data:/data/db
+      - ./mongodb/backup:/data/backup
+    networks:
+      - sddm
+
+  sddm-backend:
+    restart: always
+    image: sddm/sddm-backend
+    container_name: sddm-backend
+    entrypoint: ["java","-jar","/app.jar"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - ARTIFACT_NAME=sddm-archive-0.0.1
+    networks:
+      - sddm
+      - proxy
+    environment:
+      - VIRTUAL_HOST=sddm.nemoworks.info
+      - VIRTUAL_PORT=8080
+      - LETSENCRYPT_HOST=sddm.nemoworks.info
+      - LETSENCRYPT_EMAIL=caochun@gmail.com
+
+networks:
+  sddm:
+    driver: bridge
+  proxy:
+    external: true

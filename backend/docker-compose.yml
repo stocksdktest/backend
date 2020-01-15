@@ -1,0 +1,17 @@
+version: '2'
+# 开发环境下的docker-compose
+services:
+  mongodb:
+    image: registry.cn-hangzhou.aliyuncs.com/zhongchuang/mongodb_northwind:v2
+    container_name: schema-mongodb
+    restart: always
+    environment:
+      - MONGODB_USERNAME=my_user
+      - MONGODB_PASSWORD=password123
+      - MONGODB_DATABASE=test
+    volumes: # 设置映射目录
+      - ./mongodb/data:/data/db
+      - ./mongodb/backup:/data/backup
+    ports:
+      - "27017:27017"
+

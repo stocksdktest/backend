@@ -1,0 +1,18 @@
+server:
+  port: 8088
+spring:
+  application:
+    name: leasing-schema
+  profiles:
+    active: '@spring.profiles.active@'
+  data:
+    mongodb:
+      authentication-database: test
+      username: my_user
+      password: password123
+      port: 27017
+      host: localhost
+      database: test
+
+  main:
+    allow-bean-definition-overriding: true
