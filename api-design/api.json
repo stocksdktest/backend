@@ -308,6 +308,15 @@
           "type": "array",
           "items": {
             "type": "string"
+          },
+          "sdkVersion": {
+            "type": "string"
+          },
+          "function": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "extraParams": {
@@ -329,33 +338,14 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
-        }
-      }
-    },
-    "TestEnv": {
-      "type": "object",
-      "description": "测试环境",
-      "properties": {
-        "envType": {
-          "type": "string",
-          "enum": [
-            "Test",
-            "Simulation",
-            "Production"
-          ]
-        },
-        "sites": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "name": {
-                "type": "string"
-              },
-              "ip": {
-                "type": "string"
-              }
+          },
+          "sdkInterface": {
+            "type": "string"
+          },
+          "stockCodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
             }
           }
         }
