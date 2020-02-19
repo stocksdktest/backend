@@ -21,7 +21,6 @@ public class SdkVersionGatewayController {
     @PostMapping("/new")
     public JSONObject createSdkVersion(@RequestBody JSONObject params){
         logger.info(params.toString());
-
         params.put("title","sdkVersion"); //title表示collectionName
         RestTemplate restTemplate = new RestTemplate();//新建一个restTemplate对象
         String uri = "http://localhost:8088/api/documents/new"; //这是backend的createNewDocument对应的uri，不用更改
