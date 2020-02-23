@@ -12,8 +12,12 @@ services:
     volumes: # 设置映射目录
       - ./mongodb/data:/data/db
       - ./mongodb/backup:/data/backup
+    ports:
+      - "27017:27017"
     networks:
-      - sddm
+      sddm:
+        aliases:
+        - netmongodb
 
   sddm-backend:
     restart: always
@@ -25,17 +29,21 @@ services:
       dockerfile: Dockerfile
       args:
         - ARTIFACT_NAME=sddm-archive-0.0.1
+    ports:
+      - "8088:8088"
+#    networks:
+#      sddm:          # 使用指定的网络 sddm, 并且设置网络别名为 netbackend ，
+#        aliases:        # 设置网络别名后，可以在其他容器中 ping netbackend 访问到该容器
+#          - netbackend
     networks:
       - sddm
       - proxy
     environment:
       - VIRTUAL_HOST=sddm.nemoworks.info
-      - VIRTUAL_PORT=8080
+      - VIRTUAL_PORT=8088
       - LETSENCRYPT_HOST=sddm.nemoworks.info
       - LETSENCRYPT_EMAIL=caochun@gmail.com
 
 networks:
   sddm:
-    driver: bridge
   proxy:
-    external: true

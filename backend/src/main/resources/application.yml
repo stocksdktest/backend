@@ -13,6 +13,10 @@ spring:
       port: 27017
       host: localhost
       database: test
+#  data:
+#    mongodb:
+#      uri: mongodb://my_user:password123456@192.168.128.146:27018/test
+#      &authSource=good
 
   main:
     allow-bean-definition-overriding: true

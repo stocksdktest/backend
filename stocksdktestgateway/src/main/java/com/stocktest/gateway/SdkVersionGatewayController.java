@@ -22,7 +22,12 @@ public class SdkVersionGatewayController {
         logger.info(params.toString());
         params.put("title","sdkVersion");
         RestTemplate restTemplate = new RestTemplate();
-        String uri = "http://localhost:8088/api/documents/new";
+
+//        docker 部署的每个服务运行在不同的容器下，主机的IP都不同
+//        通讯方式：1、通过宿主机的IP和端口通讯
+//        通讯方式2、设置自定义网络 通过容器名访问
+
+        String uri = "http://sddm-backend:8088/api/documents/new";
         ResponseEntity<JSONObject> response = restTemplate.postForEntity(uri,params,JSONObject.class);
         logger.info(response.getBody().toString());
         return response.getBody();
@@ -31,7 +36,7 @@ public class SdkVersionGatewayController {
     @GetMapping()
     public JSONArray getSdkVersion(){
         RestTemplate restTemplate = new RestTemplate();
-        String uri = "http://localhost:8088/api/documents/?collectionName={collectionName}";
+        String uri = "http://sddm-backend:8088/api/documents/?collectionName={collectionName}";
         Map<String, Object> params = new HashMap<>();
         params.put("collectionName", "sdkVersion");
         ResponseEntity<JSONArray> response = restTemplate.getForEntity(uri, JSONArray.class,params);
