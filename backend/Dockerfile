@@ -16,7 +16,7 @@ COPY . .
 RUN mvn package
 
 FROM openjdk:8-jre-alpine
-WORKDIR /app
+WORKDIR /tmp
 COPY --from=build /app/target/sddm-archive-0.0.1.jar  .
 ADD sddm-archive-0.0.1.jar /app.jar
 RUN touch /app.jar
