@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
@@ -31,11 +32,18 @@ public class SdkVersionGatewayController {
     }
 
     @GetMapping()
-    public JSONArray getSdkVersion(){
+    public JSONArray getSdkVersion(
+            @RequestBody(required = false) JSONArray filterFactors){
         RestTemplate restTemplate = new RestTemplate();
-        String uri = "http://localhost:8088/api/documents/?collectionName={collectionName}";
         Map<String, Object> params = new HashMap<>();
         params.put("collectionName", "sdkVersion");
+        String uri;
+        if(filterFactors==null){
+            uri = "http://localhost:8088/api/documents/?collectionName={collectionName}";
+        }else{
+            uri = "http://localhost:8088/api/documents/?collectionName={collectionName}&filterFactors={filterFactors}";
+            params.put("filterFactors",filterFactors.toString());
+        }
         ResponseEntity<JSONArray> response = restTemplate.getForEntity(uri, JSONArray.class,params);
         logger.info(response.getBody().toString());
         return response.getBody();

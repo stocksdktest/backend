@@ -26,6 +26,7 @@ import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import javax.print.Doc;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -98,6 +99,15 @@ public class LeasingSchemaApplicationTests {
         documentService.createDocument(schemaId2,jsonObject);
         documentService.updateDocument(document.getId(),"cashFlow",jsonObject1);
         documentService.deleteDocument(document.getId(),"cashFlow");
+        JSONArray jsonArray1 = new JSONArray();
+        JSONObject jsonObject2 = new JSONObject();
+        jsonObject2.put("key","data.a");
+        jsonObject2.put("value","qqqq");
+        jsonArray1.add(jsonObject2);
+        List<Document> d = documentService.getDocumentsByCriteriaList(jsonArray1,"cashFlow");
+        for(Document doc: d){
+            System.out.println("ccccc    "+doc.toString());
+        }
         Document document0 = documentService.getDocumentByIdInCollection(document1.getId(),"cashFlow");
         System.out.println(document0.toString());
         System.out.println("============getAllDocuments========");
@@ -317,5 +327,9 @@ public class LeasingSchemaApplicationTests {
         List<JSONObject> documents = documentService.getEmbeddedDocuments("testDemo",jsonArray,"data(O).sdkInterface(A).tcc(A)");
         for(JSONObject jsonObject3:documents)
             logger.info(jsonObject3.toString());
+    }
+    @Test
+    public void testGetDocumentsInCollection(){
+
     }
 }
