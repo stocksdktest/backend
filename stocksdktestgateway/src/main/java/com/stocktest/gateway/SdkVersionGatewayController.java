@@ -30,16 +30,23 @@ public class SdkVersionGatewayController {
         return response.getBody();
     }
 
-    @GetMapping()
-    public JSONArray getSdkVersion(){
-        RestTemplate restTemplate = new RestTemplate();
-        String uri = "http://localhost:8088/api/documents/?collectionName={collectionName}";
-        Map<String, Object> params = new HashMap<>();
-        params.put("collectionName", "sdkVersion");
-        ResponseEntity<JSONArray> response = restTemplate.getForEntity(uri, JSONArray.class,params);
-        logger.info(response.getBody().toString());
-        return response.getBody();
-    }
+    @PostMapping()
+     public JSONArray getSdkVersion(@RequestBody(required = false) JSONArray filterFactors){
+         RestTemplate restTemplate = new RestTemplate();
+         Map<String, Object> params = new HashMap<>();
+         params.put("collectionName", "sdkVersion");
+         String uri;
+         if(filterFactors==null){
+            uri = "http://localhost:8088/api/documents/?collectionName={collectionName}";
+         }else{
+            uri = "http://localhost:8088/api/documents/?collectionName={collectionName}&filterFactors={filterFactors}";
+            params.put("filterFactors",filterFactors.toString());
+         }
+         ResponseEntity<JSONArray> response = restTemplate.getForEntity(uri,
+         JSONArray.class,params);
+         logger.info(response.getBody().toString());
+         return response.getBody();
+     }
 
     @GetMapping("/{id}")
     public JSONObject getSdkVersionById(@PathVariable String id){
