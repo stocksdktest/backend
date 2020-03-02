@@ -29,7 +29,7 @@ public class SdkInterfaceGatewayController {
     }
 
     @GetMapping()
-    public JSONArray getSdkVersion(){
+    public JSONArray getSdkInterface(){
         RestTemplate restTemplate = new RestTemplate();
         String uri = "http://localhost:8088/api/documents/?collectionName={collectionName}";
         Map<String, Object> params = new HashMap<>();
@@ -40,7 +40,7 @@ public class SdkInterfaceGatewayController {
     }
 
     @GetMapping("/{id}")
-    public JSONObject getSdkVersionById(@PathVariable String id){
+    public JSONObject getSdkInterfaceById(@PathVariable String id){
         RestTemplate restTemplate = new RestTemplate();
         String uri = "http://localhost:8088/api/documents/{id}?collectionName={collectionName}";
         Map<String, Object> params = new HashMap<>();
