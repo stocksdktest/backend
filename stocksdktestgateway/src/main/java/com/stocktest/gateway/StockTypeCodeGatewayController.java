@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
@@ -17,12 +18,15 @@ import java.util.Map;
 public class StockTypeCodeGatewayController {
 
     private static final Logger logger = LoggerFactory.getLogger(StockTypeCodeGatewayController.class);
+    @Value("${server.rehost}")
+    private String rehost;//在application.yml中配置的地址参数
+
     @PostMapping("/new")
     public JSONObject createStockTypeCode(@RequestBody JSONObject params){
         logger.info(params.toString());
         params.put("title","stockTypeCode");
         RestTemplate restTemplate = new RestTemplate();
-        String uri = "http://localhost:8088/api/documents/new";
+        String uri = rehost + "/api/documents/new";
         ResponseEntity<JSONObject> response = restTemplate.postForEntity(uri,params,JSONObject.class);
         logger.info(response.getBody().toString());
         return response.getBody();
@@ -31,7 +35,7 @@ public class StockTypeCodeGatewayController {
     @GetMapping()
     public JSONArray getStockTypeCode(){
         RestTemplate restTemplate = new RestTemplate();
-        String uri = "http://localhost:8088/api/documents/?collectionName={collectionName}";
+        String uri = rehost + "/api/documents/?collectionName={collectionName}";
         Map<String, Object> params = new HashMap<>();
         params.put("collectionName", "stockTypeCode");
         ResponseEntity<JSONArray> response = restTemplate.getForEntity(uri, JSONArray.class,params);
@@ -39,10 +43,29 @@ public class StockTypeCodeGatewayController {
         return response.getBody();
     }
 
+    @PostMapping()
+    public JSONArray getStockTypeCode(
+            @RequestBody(required = false) JSONArray
+                    filterFactors){ RestTemplate restTemplate = new RestTemplate();
+        Map<String, Object> params = new HashMap<>();
+        params.put("collectionName", "stockTypeCode");
+        String uri;
+        if(filterFactors==null){
+            uri = rehost + "/api/documents/?collectionName={collectionName}";
+        }else{
+            uri = rehost + "/api/documents/?collectionName={collectionName}&filterFactors={filterFactors}";
+            params.put("filterFactors",filterFactors.toString());
+        }
+        ResponseEntity<JSONArray> response = restTemplate.getForEntity(uri,
+                JSONArray.class,params);
+        logger.info(response.getBody().toString());
+        return response.getBody();
+    }
+
     @GetMapping("/{id}")
     public JSONObject getSdkVersionById(@PathVariable String id){
         RestTemplate restTemplate = new RestTemplate();
-        String uri = "http://localhost:8088/api/documents/{id}?collectionName={collectionName}";
+        String uri = rehost + "/api/documents/{id}?collectionName={collectionName}";
         Map<String, Object> params = new HashMap<>();
         params.put("id",id);
         params.put("collectionName", "stockTypeCode");
@@ -55,7 +78,7 @@ public class StockTypeCodeGatewayController {
     public JSONObject updateDocumentById(@PathVariable String id
             , @RequestBody JSONObject params) {
         RestTemplate restTemplate = new RestTemplate();
-        String uri = "http://localhost:8088/api/documents/{id}?collectionName={collectionName}";
+        String uri = rehost + "/api/documents/{id}?collectionName={collectionName}";
         Map<String, String> pathParam = new HashMap<>();
         pathParam.put("id", id);
         pathParam.put("collectionName","stockTypeCode");
@@ -70,7 +93,7 @@ public class StockTypeCodeGatewayController {
     @DeleteMapping("/{id}")
     public JSONArray deleteDocumentById(@PathVariable String id){
         RestTemplate restTemplate = new RestTemplate();
-        String uri = "http://localhost:8088/api/documents/{id}?collectionName={collectionName}";
+        String uri = rehost + "/api/documents/{id}?collectionName={collectionName}";
         Map<String, Object> params = new HashMap<>();
         params.put("id",id);
         params.put("collectionName", "stockTypeCode");

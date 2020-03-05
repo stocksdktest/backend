@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
@@ -16,13 +17,15 @@ import java.util.Map;
 @RequestMapping("/api/testenvironment")
 public class TestEnvironmentGatewayController {
     private static final Logger logger = LoggerFactory.getLogger(TestEnvironmentGatewayController.class);
+    @Value("${server.rehost}")
+    private String rehost;//在application.yml中配置的地址参数
 
     @PostMapping("/new")
     public JSONObject createTestEnvironment(@RequestBody JSONObject params){
         logger.info(params.toString());
         params.put("title","testenvironment"); //title表示collectionName
         RestTemplate restTemplate = new RestTemplate();//新建一个restTemplate对象
-        String uri = "http://localhost:8088/api/documents/new"; //这是backend的createNewDocument对应的uri，不用更改
+        String uri = rehost + "/api/documents/new"; //这是backend的createNewDocument对应的uri，不用更改
         ResponseEntity<JSONObject> response = restTemplate.postForEntity(uri,params,JSONObject.class); //在sdkVersion的collection中新建一个document
 
         logger.info(response.getBody().toString());
@@ -32,7 +35,7 @@ public class TestEnvironmentGatewayController {
     @GetMapping()
     public JSONArray getTestEnvironment(){
         RestTemplate restTemplate = new RestTemplate();
-        String uri = "http://localhost:8088/api/documents/?collectionName={collectionName}";
+        String uri = rehost + "/api/documents/?collectionName={collectionName}";
         Map<String, Object> params = new HashMap<>();
         params.put("collectionName", "testenvironment");
         ResponseEntity<JSONArray> response = restTemplate.getForEntity(uri, JSONArray.class,params);
@@ -40,10 +43,29 @@ public class TestEnvironmentGatewayController {
         return response.getBody();
     }
 
+    @PostMapping()
+    public JSONArray getTestenvironment(
+            @RequestBody(required = false) JSONArray
+                    filterFactors){ RestTemplate restTemplate = new RestTemplate();
+        Map<String, Object> params = new HashMap<>();
+        params.put("collectionName", "testenvironment");
+        String uri;
+        if(filterFactors==null){
+            uri = rehost + "/api/documents/?collectionName={collectionName}";
+        }else{
+            uri = rehost + "/api/documents/?collectionName={collectionName}&filterFactors={filterFactors}";
+            params.put("filterFactors",filterFactors.toString());
+        }
+        ResponseEntity<JSONArray> response = restTemplate.getForEntity(uri,
+                JSONArray.class,params);
+        logger.info(response.getBody().toString());
+        return response.getBody();
+    }
+
     @GetMapping("/{id}")
     public JSONObject getTestEnvironmentById(@PathVariable String id){
         RestTemplate restTemplate = new RestTemplate();
-        String uri = "http://localhost:8088/api/documents/{id}?collectionName={collectionName}";
+        String uri = rehost + "/api/documents/{id}?collectionName={collectionName}";
 
         Map<String, Object> params = new HashMap<>();
         params.put("id",id);
@@ -58,7 +80,7 @@ public class TestEnvironmentGatewayController {
     public JSONObject updateDocumentById(@PathVariable String id
             , @RequestBody JSONObject params) {
         RestTemplate restTemplate = new RestTemplate();
-        String uri = "http://localhost:8088/api/documents/{id}?collectionName={collectionName}"; //update方法对应的uri，不用更改
+        String uri = rehost + "/api/documents/{id}?collectionName={collectionName}"; //update方法对应的uri，不用更改
 
         Map<String, String> pathParam = new HashMap<>();
         pathParam.put("id", id);
@@ -77,7 +99,7 @@ public class TestEnvironmentGatewayController {
     @DeleteMapping("/{id}")
     public JSONArray deleteDocumentById(@PathVariable String id){
         RestTemplate restTemplate = new RestTemplate();
-        String uri = "http://localhost:8088/api/documents/{id}?collectionName={collectionName}";//delete对应的uri，不用更改
+        String uri = rehost + "/api/documents/{id}?collectionName={collectionName}";//delete对应的uri，不用更改
 
         Map<String, Object> params = new HashMap<>();
         params.put("id",id);
