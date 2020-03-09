@@ -8,6 +8,8 @@ import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.aggregation.LookupOperation;
 import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 import java.util.List;
 import java.util.Set;
@@ -45,5 +47,7 @@ public interface CustomDocumentRepository {
 
     //删除document
     Document deleteDocument(Document document);
+
+    void updateEmbeddedDocument(String collectionName, Query query, Update update);
 
 }

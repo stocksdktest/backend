@@ -20,6 +20,8 @@ import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.aggregation.LookupOperation;
 import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 //import com.mongodb.QueryBuilder;
@@ -170,7 +172,6 @@ public class DocumentService {
             JSONObject filterFactor = filterFactors.getJSONObject(i);
             System.out.println(filterFactor);
             HierarchicalFactor hierarchicalFactor = new HierarchicalFactor(filterFactor);
-//            System.out.println(hierarchicalFactor);
             LookupOperation lookupOperation = LookupOperation.newLookup().from(hierarchicalFactor.getCollectionName())
                     .localField(hierarchicalFactor.getLocalParam())
                     .foreignField(hierarchicalFactor.getForeignParam())
@@ -290,5 +291,30 @@ public class DocumentService {
                 return JSON.parseObject(javers.getJsonConverter().toJson(snapshot.getState()));
         }
         return null;
+    }
+
+    public Boolean updateEmbeddedDocument(String id,String collectionName,JSONObject updateInfo){
+        String type = updateInfo.getString("type");
+        String location = updateInfo.getString("location");
+        JSONArray filterFactors = updateInfo.getJSONArray("filterFactors");
+        JSONObject content = updateInfo.getJSONObject("content");
+        if(type==null||location==null||filterFactors==null||content==null) {
+            logger.info("loss update Info.");
+            return false;
+        }
+        Query query = new Query();
+        query.addCriteria(Criteria.where("_id").is(id));
+        Update update = new Update();
+        for(int i=0;i<filterFactors.size();i++){
+            JSONObject filterFactor = filterFactors.getJSONObject(i);
+            DocumentSearchFactor documentSearchFactor = new DocumentSearchFactor(filterFactor);
+            update.filterArray(documentSearchFactor.getMatchKey(),documentSearchFactor.getMatchValue());
+        }
+        if(type.equals("insert"))
+            update.push(location, content);
+        else if(type.equals("update"))
+            update.set(location,content);
+        documentRepository.updateEmbeddedDocument(collectionName,query,update);
+        return true;
     }
 }

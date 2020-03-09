@@ -7,9 +7,9 @@ spring:
     active: '@spring.profiles.active@'
   data:
     mongodb:
-      authentication-database: test
-      username: my_user
-      password: password123
+#     authentication-database: test
+#      username: my_user
+#      password: password123
       port: 27017
       host: localhost
       database: test

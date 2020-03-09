@@ -83,7 +83,7 @@ public class DocumentController {
         logger.info("get document by id " + id + " and collectionName " + collectionName);
 
         if (!hierarchical.equals("null")) {
-            logger.info("get document by hierarchi " + hierarchical + " and filter " + filterFactors);
+            logger.info("get document by hierarchical " + hierarchical + " and filter " + filterFactors);
             JSONArray filters = JSONArray.parseArray(filterFactors);
             return documentService.getDocumentByHierarchicalQueries(id, collectionName, 1, filters);
         }
@@ -103,9 +103,17 @@ public class DocumentController {
     @PutMapping("/documents/{id}")
     public Document updateDocument(@PathVariable String id
             , @RequestParam(value = "collectionName", defaultValue = "null") String collectionName
-            , @RequestBody JSONObject params) {
-        logger.info("update document by Id " + id + " and collectionName " + collectionName);
-        return documentService.updateDocument(id, collectionName, params);
+            , @RequestBody JSONObject params
+            ,  @RequestParam(value = "embeddedDocument",defaultValue = "false") boolean embeddedDocument) {
+        if(!embeddedDocument){
+            logger.info("update document by Id " + id + " and collectionName " + collectionName);
+            return documentService.updateDocument(id, collectionName, params);
+        }else{
+            logger.info("update embedded document by params "+params);
+            if(documentService.updateEmbeddedDocument(id,collectionName,params))
+                return documentService.getDocumentByIdInCollection(id,collectionName);
+            else return null;
+        }
     }
 
     @GetMapping("/documents/{id}/commits")

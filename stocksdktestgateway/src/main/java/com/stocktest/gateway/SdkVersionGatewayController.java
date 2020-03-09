@@ -50,14 +50,20 @@ public class SdkVersionGatewayController {
     }
 
     @GetMapping("/{id}")
-    public JSONObject getSdkVersionById(@PathVariable String id){
+    public JSONObject getSdkVersionById(@PathVariable String id
+        ,@RequestBody(required = false) JSONArray filterFactors){
         RestTemplate restTemplate = new RestTemplate();
-        String uri = "http://localhost:8088/api/documents/{id}?collectionName={collectionName}";
-
         Map<String, Object> params = new HashMap<>();
         params.put("id",id);
-        params.put("collectionName", "sdkVersion");
-
+        params.put("collectionName", "contract");
+        String uri;
+        if(filterFactors==null){
+            uri = "http://localhost:8088/api/documents/{id}?collectionName={collectionName}";
+        }else{
+            uri = "http://localhost:8088/api/documents/{id}?collectionName={collectionName}&hierarchical={hierarchical}&filterFactors={filterFactors}";
+            params.put("hierarchical","1");
+            params.put("filterFactors",filterFactors.toString());
+        }
         ResponseEntity<JSONObject> response = restTemplate.getForEntity(uri, JSONObject.class,params);
         logger.info(response.getBody().toString());
         return response.getBody();
@@ -65,14 +71,17 @@ public class SdkVersionGatewayController {
 
     @PutMapping("/{id}")
     public JSONObject updateDocumentById(@PathVariable String id
-            , @RequestBody JSONObject params) {
+            , @RequestBody JSONObject params
+            , @RequestParam(value = "embeddedDocument",defaultValue = "false") boolean embeddedDocument) {
         RestTemplate restTemplate = new RestTemplate();
-        String uri = "http://localhost:8088/api/documents/{id}?collectionName={collectionName}"; //update方法对应的uri，不用更改
+        String uri = "http://localhost:8088/api/documents/{id}?collectionName={collectionName}&embeddedDocument={embeddedDocument}"; //update方法对应的uri，不用更改
 
         Map<String, String> pathParam = new HashMap<>();
         pathParam.put("id", id);
-        pathParam.put("collectionName","sdkVersion"); //只需考虑这行，将collectionName更改即可
-
+        pathParam.put("collectionName","i2ec"); //只需考虑这行，将collectionName更改即可
+        if(embeddedDocument)
+            pathParam.put("embeddedDocument","true");
+        else pathParam.put("embeddedDocument","false");
         //http头信息，不用更改
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

@@ -6,6 +6,7 @@ import com.cvicse.leasing.model.Document;
 import com.cvicse.leasing.model.Status;
 import com.cvicse.leasing.repository.CustomDocumentRepository;
 import com.google.common.collect.Lists;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,15 +14,16 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 import java.util.List;
 import java.util.Set;
 
+@RequiredArgsConstructor
 public class CustomDocumentRepositoryImpl implements CustomDocumentRepository {
     private static final Logger logger = LoggerFactory.getLogger(CustomDocumentRepositoryImpl.class);
 
-    @Autowired
-    private MongoTemplate mongoTemplate;
+    private final MongoTemplate mongoTemplate;
 
     @Override
     public Set<String> findDataItemsInCollection(String collectionName){
@@ -127,6 +129,11 @@ public class CustomDocumentRepositoryImpl implements CustomDocumentRepository {
         AggregationResults<JSONObject> contractAggregationResults= mongoTemplate.aggregate(aggregation,collectionName, JSONObject.class);
         List<JSONObject> documents = contractAggregationResults.getMappedResults();
         return documents;
+    }
+
+    @Override
+    public void updateEmbeddedDocument(String collectionName, Query query, Update update){
+        mongoTemplate.upsert(query,update,collectionName);
     }
 
 }
