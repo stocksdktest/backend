@@ -298,17 +298,19 @@ public class DocumentService {
         String location = updateInfo.getString("location");
         JSONArray filterFactors = updateInfo.getJSONArray("filterFactors");
         JSONObject content = updateInfo.getJSONObject("content");
-        if(type==null||location==null||filterFactors==null||content==null) {
+        if(type==null||location==null||content==null) {
             logger.info("loss update Info.");
             return false;
         }
         Query query = new Query();
         query.addCriteria(Criteria.where("_id").is(id));
         Update update = new Update();
-        for(int i=0;i<filterFactors.size();i++){
-            JSONObject filterFactor = filterFactors.getJSONObject(i);
-            DocumentSearchFactor documentSearchFactor = new DocumentSearchFactor(filterFactor);
-            update.filterArray(documentSearchFactor.getMatchKey(),documentSearchFactor.getMatchValue());
+        if(filterFactors!= null){
+            for(int i=0;i<filterFactors.size();i++){
+                JSONObject filterFactor = filterFactors.getJSONObject(i);
+                DocumentSearchFactor documentSearchFactor = new DocumentSearchFactor(filterFactor);
+                update.filterArray(documentSearchFactor.getMatchKey(),documentSearchFactor.getMatchValue());
+            }
         }
         if(type.equals("insert"))
             update.push(location, content);
