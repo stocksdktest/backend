@@ -316,6 +316,10 @@ public class DocumentService {
             update.push(location, content);
         else if(type.equals("update"))
             update.set(location,content);
+        else if(type.equals("delete")){
+            DocumentSearchFactor documentSearchFactor = new DocumentSearchFactor(content);
+            update.pull(location,Query.query(Criteria.where(documentSearchFactor.getMatchKey()).is(documentSearchFactor.getMatchValue())).getQueryObject());
+        }
         documentRepository.updateEmbeddedDocument(collectionName,query,update);
         return true;
     }
