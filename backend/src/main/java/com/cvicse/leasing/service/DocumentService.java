@@ -25,9 +25,7 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 //import com.mongodb.QueryBuilder;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class DocumentService {
@@ -293,6 +291,7 @@ public class DocumentService {
         return null;
     }
 
+    //内嵌文档的插入、删除
     public Boolean updateEmbeddedDocument(String id,String collectionName,JSONObject updateInfo){
         String type = updateInfo.getString("type");
         String location = updateInfo.getString("location");
@@ -321,6 +320,55 @@ public class DocumentService {
             update.pull(location,Query.query(Criteria.where(documentSearchFactor.getMatchKey()).is(documentSearchFactor.getMatchValue())).getQueryObject());
         }
         documentRepository.updateEmbeddedDocument(collectionName,query,update);
+        return true;
+    }
+    //更新内嵌文档指定字段
+    public Boolean updateEmbeddedDocument2(String id,String collectionName,JSONObject updateInfo){
+        JSONArray filterFactors = updateInfo.getJSONArray("filterFactors");
+        JSONArray contents = updateInfo.getJSONArray("content");
+        if(contents==null) {
+            logger.info("loss update Info.");
+            return false;
+        }
+        Query query = new Query();
+        query.addCriteria(Criteria.where("_id").is(id));
+        Update update = new Update();
+        if(filterFactors!= null){
+            for(int i=0;i<filterFactors.size();i++){
+                JSONObject filterFactor = filterFactors.getJSONObject(i);
+                DocumentSearchFactor documentSearchFactor = new DocumentSearchFactor(filterFactor);
+                update.filterArray(documentSearchFactor.getMatchKey(),documentSearchFactor.getMatchValue());
+            }
+        }
+
+        for(int i=0;i<contents.size();i++){
+            JSONObject content = contents.getJSONObject(i);
+            DocumentSearchFactor documentSearchFactor = new DocumentSearchFactor(content);
+            update.set(documentSearchFactor.getMatchKey(),documentSearchFactor.getMatchValue());
+            documentRepository.updateEmbeddedDocument(collectionName,query,update);
+        }
+
+        return true;
+    }
+
+    //更新非内嵌文档指定字段
+    public Boolean updateNotEmbeddedDocument(String id,String collectionName,JSONObject updateInfo){
+        JSONArray contents = updateInfo.getJSONArray("content");
+        if(contents==null) {
+            logger.info("loss update Info.");
+            return false;
+        }
+        Query query = new Query();
+        query.addCriteria(Criteria.where("_id").is(id));
+        Update update = new Update();
+
+        for(int i=0;i<contents.size();i++){
+            JSONObject content = contents.getJSONObject(i);
+            DocumentSearchFactor documentSearchFactor = new DocumentSearchFactor(content);
+            update.set(documentSearchFactor.getMatchKey(),documentSearchFactor.getMatchValue());
+            documentRepository.updateEmbeddedDocument(collectionName,query,update);
+        }
+
         return true;
     }
 }

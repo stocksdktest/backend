@@ -100,6 +100,14 @@ public class DocumentController {
         }
     }
 
+    /**
+     * 内嵌文档插入，删除
+     * @param id
+     * @param collectionName
+     * @param params
+     * @param embeddedDocument
+     * @return
+     */
     @PutMapping("/documents/{id}")
     public Document updateDocument(@PathVariable String id
             , @RequestParam(value = "collectionName", defaultValue = "null") String collectionName
@@ -114,6 +122,32 @@ public class DocumentController {
                 return documentService.getDocumentByIdInCollection(id,collectionName);
             else return null;
         }
+    }
+
+    /**
+     * 文档具体字段的更新（包括内嵌非内嵌）
+     * @param id
+     * @param collectionName
+     * @param params
+     * @param embeddedDocument
+     * @return
+     */
+    @PutMapping("/documents2/{id}")
+    public Document updateDocument2(@PathVariable String id
+            , @RequestParam(value = "collectionName", defaultValue = "null") String collectionName
+            , @RequestBody JSONObject params
+            ,  @RequestParam(value = "embeddedDocument",defaultValue = "true") boolean embeddedDocument) {
+
+        if(embeddedDocument) {//true更新内嵌文档具体字段
+            if (documentService.updateEmbeddedDocument2(id, collectionName, params))
+                return documentService.getDocumentByIdInCollection(id, collectionName);
+            else return null;
+        }else{//false更新非内嵌文档的具体字段
+            if (documentService.updateNotEmbeddedDocument(id, collectionName, params))
+                return documentService.getDocumentByIdInCollection(id, collectionName);
+            else return null;
+        }
+
     }
 
     @GetMapping("/documents/{id}/commits")
