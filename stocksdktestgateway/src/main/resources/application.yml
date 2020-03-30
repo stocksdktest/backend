@@ -2,3 +2,4 @@ server:
   port: 8000
 #地址参数（包含端口号）
   rehost: http://localhost:8088
+  sehost: http://localhost:8090

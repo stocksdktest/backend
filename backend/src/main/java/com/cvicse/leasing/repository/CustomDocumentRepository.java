@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 //import com.cvicse.leasing.auth.framwork.auth.QueryModel;
 //import com.cvicse.leasing.auth.framwork.auth.enums.ActionType;
 import com.cvicse.leasing.model.Document;
+import com.cvicse.leasing.model.ResultDocument;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.aggregation.LookupOperation;
 import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
@@ -19,6 +20,9 @@ public interface CustomDocumentRepository {
     //行过滤
 //     @QueryModel(actionType = ActionType.QUERY)
     List<Document> findAllDocumentsInCollection(String collectionName);
+
+    //查询问题列表中有返回对比结果的计划集合信息
+    List<Document> findQuestionCollection(String collectionName);
     //查找所有的collection
     Set<String> findCollections();
 
@@ -34,6 +38,9 @@ public interface CustomDocumentRepository {
     //根据过滤条件查询某些具体的documents
     //getDocumentsByCriteria
     List<Document> findDocumentsByCriterias(List<Criteria> criterias, String collectionName);
+
+    List<ResultDocument> findResultDocumentsByCriterias(List<Criteria> criterias, String collectionName);
+
 
     //getOneDocumentByIdWithAggregations
     JSONObject  findDocumentByIdWithLookUpOperations(String id, String collectionName, Integer hierarchicalLevels, List<LookupOperation> lookupOperations);

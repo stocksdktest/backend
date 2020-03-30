@@ -20,6 +20,7 @@ import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.aggregation.LookupOperation;
 import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.CriteriaDefinition;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
@@ -143,6 +144,16 @@ public class DocumentService {
     }
 
     /**
+     * 查询问题列表中有返回对比结果的计划集合信息
+     * @param collectionName
+     * @return
+     */
+    public List<Document> findQuestionCollection(String collectionName){
+        logger.info("get all documents by collectionName.");
+        return documentRepository.findQuestionCollection(collectionName);
+    }
+
+    /**
      * 根据id和collection获取某个具体的Document
      * @param id
      * @param collectionName
@@ -211,7 +222,231 @@ public class DocumentService {
         return documentRepository.findDocumentsByCriterias(criteriaList,collectionName);
     }
 
+    /**
+     * 对比结果中查询问题列表信息
+     * @param filters
+     * @param collectionName
+     * @return
+     */
+    public List<Map<String,Object>> getResultDocumentsByCriteriaList(JSONArray filters,String collectionName){
+        List<Criteria> criteriaList = new ArrayList<>();
+        for(int i=0;i<filters.size();i++){
+            JSONObject filterFactor = filters.getJSONObject(i);
+            DocumentSearchFactor documentSearchFactor = new DocumentSearchFactor(filterFactor);
+            Criteria criteria = Criteria.where(documentSearchFactor.getMatchKey())
+                    .is(documentSearchFactor.getMatchValue());
+            criteriaList.add(criteria);
+        }
+        List<ResultDocument> list = documentRepository.findResultDocumentsByCriterias(criteriaList,collectionName);
+        JSONArray mismatchArray = list.get(0).getMismatch();
+        JSONArray errorArray = list.get(0).getError();
+        JSONArray emptyArray = list.get(0).getEmpty();
+        JSONArray comparedFalseArray = list.get(0).getCompared().getJSONArray("false");//compared中为false的数组
+        String id = list.get(0).getId();
+        List<Map<String,Object>> questionList =  new ArrayList<Map<String,Object>>();
+        String paramStr;//用例参数
+        String testcaseID1;//方法名
+        JSONArray details;//详细信息
+        String recordID;//recordID，后续更新状态需要
+        String status;//状态：默认0，确认1，忽略2
+        if(!comparedFalseArray.isEmpty()&&comparedFalseArray.size()!=0){
+            for(int i=0;i<comparedFalseArray.size();i++){
+                Map<String,Object> questionMap =new HashMap<String,Object>();
+                paramStr = comparedFalseArray.getJSONObject(i).getString("paramStr");
+                testcaseID1 = comparedFalseArray.getJSONObject(i).getString("testcaseID1");
+                details = comparedFalseArray.getJSONObject(i).getJSONArray("details");
+                recordID = comparedFalseArray.getJSONObject(i).getString("recordID1");
+                status = comparedFalseArray.getJSONObject(i).getString("status");
+                questionMap.put("status",status);
+                questionMap.put("id",id);
+                questionMap.put("paramStr",paramStr);
+                questionMap.put("testcaseID",testcaseID1);
+                questionMap.put("details",details);
+                questionMap.put("recordID",recordID);
+                questionMap.put("type","false");
+                questionList.add(questionMap);
+            }
+        }
+        if(!mismatchArray.isEmpty()&&mismatchArray.size()!=0){
+            for(int i=0;i<mismatchArray.size();i++){
+                Map<String,Object> questionMap2 =new HashMap<String,Object>();
+                paramStr = mismatchArray.getJSONObject(i).getString("paramStr");
+                testcaseID1 = mismatchArray.getJSONObject(i).getString("testcaseID");
+                recordID = mismatchArray.getJSONObject(i).getString("recordID");
+                status = mismatchArray.getJSONObject(i).getString("status");
+                questionMap2.put("status",status);
+                questionMap2.put("id",id);
+                questionMap2.put("paramStr",paramStr);
+                questionMap2.put("testcaseID",testcaseID1);
+                questionMap2.put("recordID",recordID);
+                questionMap2.put("type","mismatch");
+                questionList.add(questionMap2);
+            }
+        }
+        if(!errorArray.isEmpty()&&errorArray.size()!=0){
+            for(int i=0;i<errorArray.size();i++){
+                Map<String,Object> questionMap3 =new HashMap<String,Object>();
+                paramStr = errorArray.getJSONObject(i).getString("paramStr");
+                testcaseID1 = errorArray.getJSONObject(i).getString("testcaseID");
+                recordID = errorArray.getJSONObject(i).getString("recordID");
+                status = errorArray.getJSONObject(i).getString("status");
+                questionMap3.put("status",status);
+                questionMap3.put("id",id);
+                questionMap3.put("paramStr",paramStr);
+                questionMap3.put("testcaseID",testcaseID1);
+                questionMap3.put("recordID",recordID);
+                questionMap3.put("type","error");
+                questionList.add(questionMap3);
+            }
+        }
+        if(!emptyArray.isEmpty()&&emptyArray.size()!=0){
+            for(int i=0;i<emptyArray.size();i++){
+                Map<String,Object> questionMap4 =new HashMap<String,Object>();
+                paramStr = emptyArray.getJSONObject(i).getString("paramStr");
+                testcaseID1 = emptyArray.getJSONObject(i).getString("testcaseID");
+                recordID = emptyArray.getJSONObject(i).getString("recordID");
+                status = emptyArray.getJSONObject(i).getString("status");
+                questionMap4.put("status",status);
+                questionMap4.put("id",id);
+                questionMap4.put("paramStr",paramStr);
+                questionMap4.put("testcaseID",testcaseID1);
+                questionMap4.put("recordID",recordID);
+                questionMap4.put("type","empty");
+                questionList.add(questionMap4);
+            }
+        }
+        return questionList;
+    }
 
+    /**
+     * 测试报告页面查询（包含计划集合，对比结果集合）
+     * @param filters
+     * @param collectionName  默认collectionName是testResult集合，testPlan集合需要自己赋值
+     * @return
+     */
+    public List<Map<String,Object>> getTestReport(JSONArray filters,String collectionName){
+        List<Criteria> criteriaList = new ArrayList<>();
+        List<Map<String,Object>> reportList =  new ArrayList<Map<String,Object>>();//返回的总List
+        for(int i=0;i<filters.size();i++){
+            JSONObject filterFactor = filters.getJSONObject(i);
+            DocumentSearchFactor documentSearchFactor = new DocumentSearchFactor(filterFactor);
+            Criteria criteria = Criteria.where(documentSearchFactor.getMatchKey())
+                    .is(documentSearchFactor.getMatchValue());
+            criteriaList.add(criteria);
+        }
+        List<ResultDocument> list = documentRepository.findResultDocumentsByCriterias(criteriaList,collectionName);
+        List<Map<String,Object>> bugList =  new ArrayList<Map<String,Object>>();
+        JSONArray mismatchArray = list.get(0).getMismatch();
+        JSONArray errorArray = list.get(0).getError();
+        JSONArray emptyArray = list.get(0).getEmpty();
+        JSONArray comparedFalseArray = list.get(0).getCompared().getJSONArray("false");//compared中为false的数组
+        String id = list.get(0).getId();
+        List<Map<String,Object>> questionList =  new ArrayList<Map<String,Object>>();
+        String paramStr;//用例参数
+        String testcaseID1;//方法名
+        String status;//状态：默认0，确认1，忽略2
+        String bugDescribe;//bug描述
+        if(!comparedFalseArray.isEmpty()&&comparedFalseArray.size()!=0){
+            for(int i=0;i<comparedFalseArray.size();i++){
+                Map<String,Object> questionMap =new HashMap<String,Object>();
+                paramStr = comparedFalseArray.getJSONObject(i).getString("paramStr");
+                testcaseID1 = comparedFalseArray.getJSONObject(i).getString("testcaseID1");
+                bugDescribe = comparedFalseArray.getJSONObject(i).getString("bugDescribe");
+                status = comparedFalseArray.getJSONObject(i).getString("status");
+                if(("1").equals(status)){
+                    questionMap.put("paramStr",paramStr);
+                    questionMap.put("testcaseID",testcaseID1);
+                    questionMap.put("bugDescribe",bugDescribe);
+                    bugList.add(questionMap);
+                }else{
+                    continue;
+                }
+            }
+        }
+        if(!mismatchArray.isEmpty()&&mismatchArray.size()!=0){
+            for(int i=0;i<mismatchArray.size();i++){
+                Map<String,Object> questionMap2 =new HashMap<String,Object>();
+                paramStr = mismatchArray.getJSONObject(i).getString("paramStr");
+                testcaseID1 = mismatchArray.getJSONObject(i).getString("testcaseID");
+                bugDescribe = mismatchArray.getJSONObject(i).getString("bugDescribe");
+                status = mismatchArray.getJSONObject(i).getString("status");
+                if(("1").equals(status)){
+                    questionMap2.put("paramStr",paramStr);
+                    questionMap2.put("testcaseID",testcaseID1);
+                    questionMap2.put("bugDescribe",bugDescribe);
+                    bugList.add(questionMap2);
+                }else{
+                    continue;
+                }
+            }
+        }
+        if(!errorArray.isEmpty()&&errorArray.size()!=0){
+            for(int i=0;i<errorArray.size();i++){
+                Map<String,Object> questionMap3 =new HashMap<String,Object>();
+                paramStr = errorArray.getJSONObject(i).getString("paramStr");
+                testcaseID1 = errorArray.getJSONObject(i).getString("testcaseID");
+                bugDescribe = errorArray.getJSONObject(i).getString("bugDescribe");
+                status = errorArray.getJSONObject(i).getString("status");
+                if(("1").equals(status)){
+                    questionMap3.put("paramStr",paramStr);
+                    questionMap3.put("testcaseID",testcaseID1);
+                    questionMap3.put("bugDescribe",bugDescribe);
+                    bugList.add(questionMap3);
+                }else{
+                    continue;
+                }
+            }
+        }
+        if(!emptyArray.isEmpty()&&emptyArray.size()!=0){
+            for(int i=0;i<emptyArray.size();i++){
+                Map<String,Object> questionMap4 =new HashMap<String,Object>();
+                paramStr = emptyArray.getJSONObject(i).getString("paramStr");
+                testcaseID1 = emptyArray.getJSONObject(i).getString("testcaseID");
+                bugDescribe = emptyArray.getJSONObject(i).getString("bugDescribe");
+                status = emptyArray.getJSONObject(i).getString("status");
+                if(("1").equals(status)){
+                    questionMap4.put("paramStr",paramStr);
+                    questionMap4.put("testcaseID",testcaseID1);
+                    questionMap4.put("bugDescribe",bugDescribe);
+                    bugList.add(questionMap4);
+                }else{
+                    continue;
+                }
+            }
+        }
+        //Map<String,Object> bugMap =new HashMap<String,Object>();
+        //bugMap.put("bugList",bugMap);
+        //reportList.add(bugMap);
+        List<Criteria> criteriaList2 = new ArrayList<>();
+        Map<String,Object> planMap =new HashMap<String,Object>();
+        for(int i=0;i<filters.size();i++){
+            JSONObject filterFactor = filters.getJSONObject(i);
+            DocumentSearchFactor documentSearchFactor = new DocumentSearchFactor(filterFactor);
+            Criteria criteria = Criteria.where(("data.time_stamp")).is(documentSearchFactor.getMatchValue());
+            criteriaList2.add(criteria);
+        }
+        collectionName = "testPlan";
+        List<Document> planList = documentRepository.findDocumentsByCriterias(criteriaList2,collectionName);
+        JSONObject data = planList.get(0).getData();
+        String planName = data.getString("plan_name");
+        String planType = data.getString("plan_type");
+        //环境 0测试 1全真 2生产
+        String environment1 = data.getJSONObject("tp_environment1").getString("environment");
+        String environment2 = data.getJSONObject("tp_environment2").getString("environment");
+        String environment = environment1 +"," +environment2;
+        String sdkVersion = data.getString("plan_type");
+        String startTime = data.getString("start_time");
+        String runTimes = data.getString("run_times");
+        planMap.put("planName",planName);
+        planMap.put("planType",planType);
+        planMap.put("environment",environment);
+        planMap.put("sdkVersion",sdkVersion);
+        planMap.put("startTime",startTime);
+        planMap.put("runTimes",runTimes);
+        planMap.put("bugList",bugList);
+        reportList.add(planMap);
+        return reportList;
+    }
 
 
     /**
@@ -296,8 +531,8 @@ public class DocumentService {
         String type = updateInfo.getString("type");
         String location = updateInfo.getString("location");
         JSONArray filterFactors = updateInfo.getJSONArray("filterFactors");
-        JSONObject content = updateInfo.getJSONObject("content");
-        if(type==null||location==null||content==null) {
+        JSONArray contents = updateInfo.getJSONArray("content");
+        if(type==null||location==null) {
             logger.info("loss update Info.");
             return false;
         }
@@ -311,15 +546,20 @@ public class DocumentService {
                 update.filterArray(documentSearchFactor.getMatchKey(),documentSearchFactor.getMatchValue());
             }
         }
-        if(type.equals("insert"))
-            update.push(location, content);
-        else if(type.equals("update"))
-            update.set(location,content);
-        else if(type.equals("delete")){
-            DocumentSearchFactor documentSearchFactor = new DocumentSearchFactor(content);
-            update.pull(location,Query.query(Criteria.where(documentSearchFactor.getMatchKey()).is(documentSearchFactor.getMatchValue())).getQueryObject());
+        if(contents!= null) {
+            for (int i = 0; i < contents.size(); i++) {
+                JSONObject content = contents.getJSONObject(i);
+                if (type.equals("insert")) {
+                    update.push(location, content);
+                } else if (type.equals("update")) {
+                    update.set(location, content);
+                } else if (type.equals("delete")) {
+                    DocumentSearchFactor documentSearchFactor = new DocumentSearchFactor(content);
+                    update.pull(location, Query.query(Criteria.where(documentSearchFactor.getMatchKey()).is(documentSearchFactor.getMatchValue())).getQueryObject());
+                }
+                documentRepository.updateEmbeddedDocument(collectionName, query, update);
+            }
         }
-        documentRepository.updateEmbeddedDocument(collectionName,query,update);
         return true;
     }
     //更新内嵌文档指定字段

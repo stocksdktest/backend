@@ -4,7 +4,6 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -15,18 +14,33 @@ import java.util.Map;
 
 @RestController
 @CrossOrigin
-@RequestMapping("/api/testinformation")
-public class TestInformationGatewayController {
+@RequestMapping("/api/testplan")
+public class TestPlanGatewayController {
 
-    private static final Logger logger = LoggerFactory.getLogger(TestInformationGatewayController.class);
+    private static final Logger logger = LoggerFactory.getLogger(TestPlanGatewayController.class);
     @Value("${server.rehost}")
     private String rehost;//在application.yml中配置的地址参数
+    @Value("${server.sehost}")
+    private String sehost;//在application.yml中配置的地址参数
+
 
 
     @PostMapping("/new")
-    public JSONObject createTestInformation(@RequestBody JSONObject params){
+    public JSONObject createTestPlan(@RequestBody JSONObject params){
         logger.info(params.toString());
-        params.put("title","testInformation"); //title表示collectionName
+        params.put("title","testPlan"); //title表示collectionName
+        RestTemplate restTemplate = new RestTemplate();//新建一个restTemplate对象
+        String uri = rehost + "/api/documents/new"; //这是backend的createNewDocument对应的uri，不用更改
+        ResponseEntity<JSONObject> response = restTemplate.postForEntity(uri,params,JSONObject.class); //在sdkVersion的collection中新建一个document
+
+        logger.info(response.getBody().toString());
+        return response.getBody();
+    }
+
+    @PostMapping("/result")
+    public JSONObject createTestResult(@RequestBody JSONObject params){
+        logger.info(params.toString());
+        params.put("title","testPlan"); //title表示collectionName
         RestTemplate restTemplate = new RestTemplate();//新建一个restTemplate对象
         String uri = rehost + "/api/documents/new"; //这是backend的createNewDocument对应的uri，不用更改
         ResponseEntity<JSONObject> response = restTemplate.postForEntity(uri,params,JSONObject.class); //在sdkVersion的collection中新建一个document
@@ -36,43 +50,61 @@ public class TestInformationGatewayController {
     }
 
     @GetMapping()
-    public JSONArray getTestInformation(){
+    public JSONArray getTestPlan(){
         RestTemplate restTemplate = new RestTemplate();
         String uri = rehost + "/api/documents/?collectionName={collectionName}";
         Map<String, Object> params = new HashMap<>();
-        params.put("collectionName", "testInformation");
+        params.put("collectionName", "testPlan");
         ResponseEntity<JSONArray> response = restTemplate.getForEntity(uri, JSONArray.class,params);
         logger.info(response.getBody().toString());
         return response.getBody();
     }
 
+    /**
+     * 计划集合的查询
+     * @param filterFactors
+     * @return
+     */
     @PostMapping()
-    public JSONArray getTestInformation(
-            @RequestBody(required = false) JSONArray
-                    filterFactors){ RestTemplate restTemplate = new RestTemplate();
+    public JSONArray getTestPlan(
+            @RequestBody(required = false) JSONArray filterFactors){ RestTemplate restTemplate = new RestTemplate();
         Map<String, Object> params = new HashMap<>();
-        params.put("collectionName", "testInformation");
+        params.put("collectionName", "testPlan");
         String uri;
             if(filterFactors==null){
             uri = rehost + "/api/documents/?collectionName={collectionName}";
         }else{
             uri = rehost + "/api/documents/?collectionName={collectionName}&filterFactors={filterFactors}";
-            params.put("filterFactors",filterFactors.toString());
+            params.put("filterFactors",filterFactors);
         }
         ResponseEntity<JSONArray> response = restTemplate.getForEntity(uri,JSONArray.class,params);
         logger.info(response.getBody().toString());
         return response.getBody();
     }
 
+    /**
+     * 问题列表页面已有对比结果的计划信息查询
+     * @return
+     */
+    @PostMapping("/questionPlan")
+    public JSONArray getQuestionPlanInformation(){ RestTemplate restTemplate = new RestTemplate();
+        Map<String, Object> params = new HashMap<>();
+        params.put("collectionName", "testPlan");
+        String uri;
+        uri = rehost + "/api/questionplan/?collectionName={collectionName}";
+        ResponseEntity<JSONArray> response = restTemplate.getForEntity(uri,JSONArray.class,params);
+        logger.info(response.getBody().toString());
+        return response.getBody();
+    }
 
     @GetMapping("/{id}")
-    public JSONObject getTestInformationById(@PathVariable String id){
+    public JSONObject getTestPlanById(@PathVariable String id){
         RestTemplate restTemplate = new RestTemplate();
         String uri = rehost + "/api/documents/{id}?collectionName={collectionName}";
 
         Map<String, Object> params = new HashMap<>();
         params.put("id",id);
-        params.put("collectionName", "testInformation");
+        params.put("collectionName", "testPlan");
 
         ResponseEntity<JSONObject> response = restTemplate.getForEntity(uri, JSONObject.class,params);
         logger.info(response.getBody().toString());
@@ -95,7 +127,7 @@ public class TestInformationGatewayController {
 
         Map<String, String> pathParam = new HashMap<>();
         pathParam.put("id", id);
-        pathParam.put("collectionName","testInformation"); //只需考虑这行，将collectionName更改即可
+        pathParam.put("collectionName","testPlan"); //只需考虑这行，将collectionName更改即可
         if(embeddedDocument){
             pathParam.put("embeddedDocument","true");
         }else{
@@ -125,7 +157,7 @@ public class TestInformationGatewayController {
 
         Map<String, String> pathParam = new HashMap<>();
         pathParam.put("id", id);
-        pathParam.put("collectionName","testInformation"); //只需考虑这行，将collectionName更改即可
+        pathParam.put("collectionName","testPlan"); //只需考虑这行，将collectionName更改即可
         if(embeddedDocument){
             pathParam.put("embeddedDocument","true");
         }else{
@@ -147,7 +179,7 @@ public class TestInformationGatewayController {
 
         Map<String, Object> params = new HashMap<>();
         params.put("id",id);
-        params.put("collectionName", "testInformation");
+        params.put("collectionName", "testPlan");
 
 
         HttpHeaders headers = new HttpHeaders();

@@ -6,6 +6,7 @@ import com.alibaba.fastjson.JSONObject;
 //import com.cvicse.leasing.auth.framwork.auth.AuthModel;
 //import com.cvicse.leasing.auth.framwork.auth.enums.ActionType;
 import com.cvicse.leasing.model.Document;
+import com.cvicse.leasing.model.ResultDocument;
 import com.cvicse.leasing.service.DocumentService;
 //import com.cvicse.leasingauthmanage.repository.UserRepository;
 import org.slf4j.Logger;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import com.google.gson.Gson;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @RestController
@@ -58,6 +60,38 @@ public class DocumentController {
         return this.documentService.getDocumentsInCollection(collectionName);
     }
 
+    /**
+     * 问题列表查询
+     * @param collectionName
+     * @param filterFactors
+     * @return
+     */
+    @GetMapping("/questionList")
+    public List<Map<String,Object>> getQuestionList(
+            @RequestParam(value = "collectionName", defaultValue = "null") String collectionName
+            , @RequestParam(value = "filterFactors") String filterFactors) {
+        logger.info(filterFactors);
+        logger.info("get specialDocumentList by filterFactors " + filterFactors);
+        JSONArray filters = JSONArray.parseArray(filterFactors);
+        return this.documentService.getResultDocumentsByCriteriaList(filters, collectionName);
+    }
+
+    /**
+     *测试报告页面查询（包含计划集合，对比结果集合）
+     * @param collectionName
+     * @param filterFactors  时间戳
+     * @return
+     */
+    @GetMapping("/testReport")
+    public List<Map<String,Object>> getTestReport(
+            @RequestParam(value = "collectionName", defaultValue = "null") String collectionName
+            , @RequestParam(value = "filterFactors") String filterFactors) {
+        logger.info(filterFactors);
+        logger.info("get specialDocumentList by filterFactors " + filterFactors);
+        JSONArray filters = JSONArray.parseArray(filterFactors);
+        return this.documentService.getTestReport(filters, collectionName);
+    }
+
     @GetMapping("/documents")
 //    @AuthModel(targetModel = Document.class, actionType = {ActionType.QUERY})
     public List<Document> getDocuments(
@@ -73,6 +107,19 @@ public class DocumentController {
             JSONArray filters = JSONArray.parseArray(filterFactors);
             return this.documentService.getDocumentsByCriteriaList(filters, collectionName);
         }
+    }
+
+    /**
+     * 问题列表下拉选，已有对比结果的计划信息查询
+     * @param collectionName
+     * @return
+     */
+    @GetMapping("/questionplan")
+    public List<Document> findQuestionCollection(
+            @RequestParam(value = "collectionName", defaultValue = "null") String collectionName) {
+            logger.info("get all documents by collectionName " + collectionName);
+            List<Document> list = this.documentService.findQuestionCollection(collectionName);
+            return list;
     }
 
     @GetMapping("/documents/{id}")
@@ -133,21 +180,28 @@ public class DocumentController {
      * @return
      */
     @PutMapping("/documents2/{id}")
-    public Document updateDocument2(@PathVariable String id
+    public JSONObject updateDocument2(@PathVariable String id
             , @RequestParam(value = "collectionName", defaultValue = "null") String collectionName
             , @RequestBody JSONObject params
             ,  @RequestParam(value = "embeddedDocument",defaultValue = "true") boolean embeddedDocument) {
-
+        JSONObject returnValue = new JSONObject();
         if(embeddedDocument) {//true更新内嵌文档具体字段
-            if (documentService.updateEmbeddedDocument2(id, collectionName, params))
-                return documentService.getDocumentByIdInCollection(id, collectionName);
-            else return null;
+            if (documentService.updateEmbeddedDocument2(id, collectionName, params)){
+                returnValue.put("statusFlag","true");
+                return returnValue;
+            } else {
+                returnValue.put("statusFlag","false");
+                return returnValue;
+            }
         }else{//false更新非内嵌文档的具体字段
-            if (documentService.updateNotEmbeddedDocument(id, collectionName, params))
-                return documentService.getDocumentByIdInCollection(id, collectionName);
-            else return null;
+            if (documentService.updateEmbeddedDocument(id, collectionName, params)){
+                returnValue.put("statusFlag","true");
+                return returnValue;
+            } else {
+                returnValue.put("statusFlag","false");
+                return returnValue;
+            }
         }
-
     }
 
     @GetMapping("/documents/{id}/commits")
