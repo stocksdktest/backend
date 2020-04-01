@@ -24,7 +24,7 @@ public class ResultDocument {
 
     private JSONArray mismatch;
 
-    private JSONObject compared;
+    private JSONObject result;
 
     private JSONArray error;
 
@@ -86,12 +86,12 @@ public class ResultDocument {
         this.mismatch = mismatch;
     }
 
-    public JSONObject getCompared() {
-        return compared;
+    public JSONObject getResult() {
+        return result;
     }
 
-    public void setCompared(JSONObject compared) {
-        this.compared = compared;
+    public void setResult(JSONObject result) {
+        this.result = result;
     }
 
     public JSONArray getError() {
@@ -114,7 +114,7 @@ public class ResultDocument {
     public String toString() {
 //        System.out.println("bug" + JSON.toJSONString(data));
         return String.format(
-                "{id:'%s', jobID:'%s', dagID:'%s',title:'%s',runnerID1:'%s',runnerID2:'%s', compared:'%s',mismatch:'%s',error:'%s',empty:'%s'}",
-                id, jobID, dagID,title,runnerID1,runnerID2, JSON.toJSONString(compared), JSON.toJSONString(mismatch), JSON.toJSONString(error), JSON.toJSONString(empty));
+                "{id:'%s', jobID:'%s', dagID:'%s',title:'%s',runnerID1:'%s',runnerID2:'%s', result:'%s',mismatch:'%s',error:'%s',empty:'%s'}",
+                id, jobID, dagID,title,runnerID1,runnerID2, JSON.toJSONString(result), JSON.toJSONString(mismatch), JSON.toJSONString(error), JSON.toJSONString(empty));
     }
 }

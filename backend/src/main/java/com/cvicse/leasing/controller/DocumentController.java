@@ -9,6 +9,7 @@ import com.cvicse.leasing.model.Document;
 import com.cvicse.leasing.model.ResultDocument;
 import com.cvicse.leasing.service.DocumentService;
 //import com.cvicse.leasingauthmanage.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +43,14 @@ public class DocumentController {
         return documentService.getDataKeys(collectionName);
     }
 
-
+    @PostMapping("/result/new")
+    public void createResultDocument(@RequestBody JSONArray testResult) {
+        for(int i=0;i<testResult.size();i++){
+            ObjectMapper objectMapper = new ObjectMapper();
+            ResultDocument result = objectMapper.convertValue(testResult.get(i),ResultDocument.class);
+            documentService.createResultDocument(result);
+        }
+    }
 
     @PostMapping("/documents/new")
     public Document createDocument(@RequestBody JSONObject params

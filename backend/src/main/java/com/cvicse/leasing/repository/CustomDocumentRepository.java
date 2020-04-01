@@ -49,6 +49,9 @@ public interface CustomDocumentRepository {
     List<JSONObject> findEmbeddedDocumentByAggregationOperations(String collectionName, List<AggregationOperation> aggregationOperations);
     //创建document
     Document createDocument(Document document);
+
+    //创建ResultDocument
+    ResultDocument createResultDocument(ResultDocument document);
     //保存document
     Document saveDocument(Document document);
 
