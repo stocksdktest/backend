@@ -132,6 +132,11 @@ public class CustomDocumentRepositoryImpl implements CustomDocumentRepository {
     }
 
     @Override
+    public  ResultDocument createResultDocument(ResultDocument document){
+        return mongoTemplate.insert(document,"testResult");
+    }
+
+    @Override
     public Document saveDocument(Document document){
        return mongoTemplate.save(document,document.getCollectionName());
     }
