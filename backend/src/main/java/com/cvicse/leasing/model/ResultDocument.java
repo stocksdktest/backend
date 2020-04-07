@@ -10,7 +10,7 @@ import org.springframework.data.annotation.Id;
 @org.springframework.data.mongodb.core.mapping.Document(collection = "Document")
 public class ResultDocument {
     @Id
-    private String id;
+    private String _id;
 
     private String jobID;
 
@@ -30,12 +30,12 @@ public class ResultDocument {
 
     private JSONArray empty;
 
-    public String getId() {
-        return id;
+    public String get_id() {
+        return _id;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void set_id(String _id) {
+        this._id = _id;
     }
 
     public String getJobID() {
@@ -114,7 +114,7 @@ public class ResultDocument {
     public String toString() {
 //        System.out.println("bug" + JSON.toJSONString(data));
         return String.format(
-                "{id:'%s', jobID:'%s', dagID:'%s',title:'%s',runnerID1:'%s',runnerID2:'%s', result:'%s',mismatch:'%s',error:'%s',empty:'%s'}",
-                id, jobID, dagID,title,runnerID1,runnerID2, JSON.toJSONString(result), JSON.toJSONString(mismatch), JSON.toJSONString(error), JSON.toJSONString(empty));
+                "{_id:'%s', jobID:'%s', dagID:'%s',title:'%s',runnerID1:'%s',runnerID2:'%s', result:'%s',mismatch:'%s',error:'%s',empty:'%s'}",
+                _id, jobID, dagID,title,runnerID1,runnerID2, JSON.toJSONString(result), JSON.toJSONString(mismatch), JSON.toJSONString(error), JSON.toJSONString(empty));
     }
 }

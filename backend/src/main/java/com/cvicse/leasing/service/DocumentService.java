@@ -26,6 +26,7 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 //import com.mongodb.QueryBuilder;
+import java.math.BigDecimal;
 import java.util.*;
 
 @Service
@@ -244,7 +245,7 @@ public class DocumentService {
             JSONArray errorArray = list.get(0).getError();
             JSONArray emptyArray = list.get(0).getEmpty();
             JSONArray comparedFalseArray = list.get(0).getResult().getJSONArray("false");//compared中为false的数组
-            String id = list.get(0).getId();
+            String id = list.get(0).get_id();
             String paramStr;//用例参数
             String testcaseID1;//方法名
             JSONArray details;//详细信息
@@ -329,21 +330,30 @@ public class DocumentService {
     public List<Map<String,Object>> getTestReport(JSONArray filters,String collectionName){
         List<Criteria> criteriaList = new ArrayList<>();
         List<Map<String,Object>> reportList =  new ArrayList<Map<String,Object>>();//返回的总List
+        List<Map<String,Object>> bugList =  new ArrayList<Map<String,Object>>();//缺陷列表
+        Map<String,Object> reportMap =new HashMap<String,Object>();
+        Set methodsAllSet = new HashSet();//将方法放入set集合进行自动去重，计数，用于计算覆盖率，通过率
+        Set methodsErrorSet = new HashSet();
+        /*---------------------查询对比结果集合-------------------------*/
         for(int i=0;i<filters.size();i++){
             JSONObject filterFactor = filters.getJSONObject(i);
             DocumentSearchFactor documentSearchFactor = new DocumentSearchFactor(filterFactor);
-            Criteria criteria = Criteria.where(documentSearchFactor.getMatchKey())
-                    .is(documentSearchFactor.getMatchValue());
+            Criteria criteria = Criteria.where(documentSearchFactor.getMatchKey()).is(documentSearchFactor.getMatchValue());
             criteriaList.add(criteria);
         }
         List<ResultDocument> list = documentRepository.findResultDocumentsByCriterias(criteriaList,collectionName);
-        List<Map<String,Object>> bugList =  new ArrayList<Map<String,Object>>();
+        JSONArray mismatchArray = new JSONArray();
+        JSONArray errorArray = new JSONArray();
+        JSONArray emptyArray = new JSONArray();
+        JSONArray comparedFalseArray = new JSONArray();
+        JSONArray comparedTrueArray = new JSONArray();
         if(list!=null && !list.isEmpty()){
-            JSONArray mismatchArray = list.get(0).getMismatch();
-            JSONArray errorArray = list.get(0).getError();
-            JSONArray emptyArray = list.get(0).getEmpty();
-            JSONArray comparedFalseArray = list.get(0).getResult().getJSONArray("false");//compared中为false的数组
-            String id = list.get(0).getId();
+            mismatchArray = list.get(0).getMismatch();
+            errorArray = list.get(0).getError();
+            emptyArray = list.get(0).getEmpty();
+            comparedFalseArray = list.get(0).getResult().getJSONArray("false");//compared中为false的数组
+            comparedTrueArray = list.get(0).getResult().getJSONArray("true");//compared中为false的数组
+            String id = list.get(0).get_id();
             List<Map<String,Object>> questionList =  new ArrayList<Map<String,Object>>();
             String paramStr;//用例参数
             String testcaseID1;//方法名
@@ -356,6 +366,8 @@ public class DocumentService {
                     testcaseID1 = comparedFalseArray.getJSONObject(i).getString("testcaseID1");
                     bugDescribe = comparedFalseArray.getJSONObject(i).getString("bugDescribe");
                     status = comparedFalseArray.getJSONObject(i).getString("status");
+                    methodsAllSet.add(testcaseID1);//将方法名加入set，实现去重
+                    methodsErrorSet.add(testcaseID1);
                     if(("1").equals(status)){
                         questionMap.put("paramStr",paramStr);
                         questionMap.put("testcaseID",testcaseID1);
@@ -373,6 +385,8 @@ public class DocumentService {
                     testcaseID1 = mismatchArray.getJSONObject(i).getString("testcaseID");
                     bugDescribe = mismatchArray.getJSONObject(i).getString("bugDescribe");
                     status = mismatchArray.getJSONObject(i).getString("status");
+                    methodsAllSet.add(testcaseID1);//将方法名加入set，实现去重
+                    methodsErrorSet.add(testcaseID1);
                     if(("1").equals(status)){
                         questionMap2.put("paramStr",paramStr);
                         questionMap2.put("testcaseID",testcaseID1);
@@ -390,6 +404,8 @@ public class DocumentService {
                     testcaseID1 = errorArray.getJSONObject(i).getString("testcaseID");
                     bugDescribe = errorArray.getJSONObject(i).getString("bugDescribe");
                     status = errorArray.getJSONObject(i).getString("status");
+                    methodsAllSet.add(testcaseID1);//将方法名加入set，实现去重
+                    methodsErrorSet.add(testcaseID1);
                     if(("1").equals(status)){
                         questionMap3.put("paramStr",paramStr);
                         questionMap3.put("testcaseID",testcaseID1);
@@ -407,6 +423,8 @@ public class DocumentService {
                     testcaseID1 = emptyArray.getJSONObject(i).getString("testcaseID");
                     bugDescribe = emptyArray.getJSONObject(i).getString("bugDescribe");
                     status = emptyArray.getJSONObject(i).getString("status");
+                    methodsAllSet.add(testcaseID1);//将方法名加入set，实现去重
+                    methodsErrorSet.add(testcaseID1);
                     if(("1").equals(status)){
                         questionMap4.put("paramStr",paramStr);
                         questionMap4.put("testcaseID",testcaseID1);
@@ -417,9 +435,16 @@ public class DocumentService {
                     }
                 }
             }
+            if(!comparedTrueArray.isEmpty()&&comparedTrueArray.size()!=0){
+                for(int i=0;i<comparedTrueArray.size();i++){
+                    testcaseID1 = comparedTrueArray.getJSONObject(i).getString("testcaseID1");
+                    methodsAllSet.add(testcaseID1);//将方法名加入set，实现去重
+                }
+            }
+            reportMap.put("bugList",bugList);//将缺陷列表放入结果map中
         }
+        /*---------------------查询计划集合-------------------------*/
         List<Criteria> criteriaList2 = new ArrayList<>();
-        Map<String,Object> planMap =new HashMap<String,Object>();
         for(int i=0;i<filters.size();i++){
             JSONObject filterFactor = filters.getJSONObject(i);
             DocumentSearchFactor documentSearchFactor = new DocumentSearchFactor(filterFactor);
@@ -439,18 +464,71 @@ public class DocumentService {
             String sdkVersion = data.getString("sdk_version");
             String startTime = data.getString("start_time");
             String runTimes = data.getString("run_times");
-            planMap.put("planName",planName);
-            planMap.put("planType",planType);
-            planMap.put("environment",environment);
-            planMap.put("sdkVersion",sdkVersion);
-            planMap.put("startTime",startTime);
-            planMap.put("runTimes",runTimes);
-            planMap.put("bugList",bugList);
-            reportList.add(planMap);
+            JSONArray methods = data.getJSONArray("methods");
+            reportMap.put("planName",planName);
+            reportMap.put("planType",planType);
+            reportMap.put("environment",environment);
+            reportMap.put("startTime",startTime);
+            reportMap.put("sdkVersion",sdkVersion);
+            reportMap.put("runTimes",runTimes);
+            /*---------------------统计图数据查询-------------------------*/
+            //查询计算本次版本下的方法数和用例数
+            List<Criteria> criteriaList3 = new ArrayList<>();
+            Criteria criteria = Criteria.where(("data.sdk_version")).is(sdkVersion);
+            criteriaList3.add(criteria);
+            collectionName = "testInformation";
+            List<Document> versionList = documentRepository.findDocumentsByCriterias(criteriaList3,collectionName);
+            JSONArray interfacesList = versionList.get(0).getData().getJSONArray("interfaces");
+            double versionMethods = 0.00;//该版本下的方法总数
+            double versionTestcases = 0.00;//该版本下的用例总数
+            for(int i=0;i<interfacesList.size();i++){
+                JSONArray methodsList = interfacesList.getJSONObject(i).getJSONArray("methods");
+                if(methodsList!=null){
+                    versionMethods+= methodsList.size();
+                    for(int j=0;j<methodsList.size();j++){
+                        JSONArray testcaseList = methodsList.getJSONObject(j).getJSONArray("testcases");
+                        if(testcaseList!=null){
+                            versionTestcases+= testcaseList.size();
+                        }
+                    }
+                }
+            }
+            //方法覆盖率：  本次计划总方法数/本版本总方法数
+            double thisMethods = methodsAllSet.toArray().length;
+            double methodCoverRate = divide(thisMethods,versionMethods,4);//方法覆盖率
+            reportMap.put("methodCoverRate",methodCoverRate);
+            //方法通过率：  1-本次计划方法错误数/本次计划总方法数
+            double methodsNotPass = methodsErrorSet.toArray().length;//先算错误未通过的个数
+            double methodNotPassRate = divide(methodsNotPass,thisMethods,4);
+            double methodPassRate = 1.00-methodNotPassRate;
+            reportMap.put("methodPassRate",methodPassRate);
+            //用例覆盖率  本次计划用例个数/本版本总用例数
+            double thisTestcases = comparedFalseArray.size()+comparedTrueArray.size()+emptyArray.size()+mismatchArray.size()+errorArray.size();//本次计划总用例数
+            double testcaseCoverRate = divide(thisTestcases,versionTestcases,4);
+            reportMap.put("testcaseCoverRate",testcaseCoverRate);
+            //用例通过率  本次计划用例正确数/本次使用总用例数
+            double thisTestcasePass = comparedTrueArray.size();
+            double testcasePassRate = divide(thisTestcasePass,thisTestcases,4);
+            reportMap.put("testcasePassRate",testcasePassRate);
         }
+
+        //将map放入一个list中，可能业务扩展需求
+        reportList.add(reportMap);
         return reportList;
     }
 
+    /**
+     * 提供精确的除法运算方法divide
+     * @param value1 被除数
+     * @param value2 除数
+     * @param scale 精确范围
+     * @return 两个参数的商
+     */
+    public double divide(double value1,double value2,int scale){
+        BigDecimal b1 = new BigDecimal(Double.valueOf(value1));
+        BigDecimal b2 = new BigDecimal(Double.valueOf(value2));
+        return b1.divide(b2,scale,BigDecimal.ROUND_HALF_UP).doubleValue();
+    }
 
     /**
      * 根据schemaId和内容创建一个新的document
@@ -484,7 +562,7 @@ public class DocumentService {
     @Transactional
     public ResultDocument createResultDocument(ResultDocument result){
         ResultDocument newDoc =  documentRepository.createResultDocument(result);
-        javers.commit(newDoc.getId(),newDoc);
+        javers.commit(newDoc.get_id(),newDoc);
         return newDoc;
     }
 
@@ -546,10 +624,10 @@ public class DocumentService {
         String location = updateInfo.getString("location");
         JSONArray filterFactors = updateInfo.getJSONArray("filterFactors");
         JSONArray contents = updateInfo.getJSONArray("content");
-        if(type==null||location==null) {
+        /*if(type==null||location==null) {
             logger.info("loss update Info.");
             return false;
-        }
+        }*/
         Query query = new Query();
         query.addCriteria(Criteria.where("_id").is(id));
         Update update = new Update();
