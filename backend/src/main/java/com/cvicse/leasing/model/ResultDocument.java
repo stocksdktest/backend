@@ -16,7 +16,7 @@ public class ResultDocument {
 
     private String dagID;
 
-    private String title;
+    private String planName;
 
     private String runnerID1;
 
@@ -29,6 +29,8 @@ public class ResultDocument {
     private JSONArray error;
 
     private JSONArray empty;
+
+    private String quoteDetail;
 
     public String get_id() {
         return _id;
@@ -54,12 +56,12 @@ public class ResultDocument {
         this.dagID = dagID;
     }
 
-    public String getTitle() {
-        return title;
+    public String getPlanName() {
+        return planName;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public void setPlanName(String planName) {
+        this.planName = planName;
     }
 
     public String getRunnerID1() {
@@ -110,11 +112,19 @@ public class ResultDocument {
         this.empty = empty;
     }
 
+    public String getQuoteDetail() {
+        return quoteDetail;
+    }
+
+    public void setQuoteDetail(String quoteDetail) {
+        this.quoteDetail = quoteDetail;
+    }
+
     @Override
     public String toString() {
 //        System.out.println("bug" + JSON.toJSONString(data));
         return String.format(
-                "{_id:'%s', jobID:'%s', dagID:'%s',title:'%s',runnerID1:'%s',runnerID2:'%s', result:'%s',mismatch:'%s',error:'%s',empty:'%s'}",
-                _id, jobID, dagID,title,runnerID1,runnerID2, JSON.toJSONString(result), JSON.toJSONString(mismatch), JSON.toJSONString(error), JSON.toJSONString(empty));
+                "{_id:'%s', jobID:'%s', dagID:'%s',planName:'%s',runnerID1:'%s',runnerID2:'%s', result:'%s',mismatch:'%s',error:'%s',empty:'%s',quoteDetail:'%s'}",
+                _id, jobID, dagID,planName,runnerID1,runnerID2, JSON.toJSONString(result), JSON.toJSONString(mismatch), JSON.toJSONString(error), JSON.toJSONString(empty),quoteDetail);
     }
 }

@@ -149,7 +149,7 @@ public class DocumentService {
      * @param collectionName
      * @return
      */
-    public List<Document> findQuestionCollection(String collectionName){
+    public List<ResultDocument> findQuestionCollection(String collectionName){
         logger.info("get all documents by collectionName.");
         return documentRepository.findQuestionCollection(collectionName);
     }
@@ -234,8 +234,7 @@ public class DocumentService {
         for(int i=0;i<filters.size();i++){
             JSONObject filterFactor = filters.getJSONObject(i);
             DocumentSearchFactor documentSearchFactor = new DocumentSearchFactor(filterFactor);
-            Criteria criteria = Criteria.where(documentSearchFactor.getMatchKey())
-                    .is(documentSearchFactor.getMatchValue());
+            Criteria criteria = Criteria.where(documentSearchFactor.getMatchKey()).is(documentSearchFactor.getMatchValue());
             criteriaList.add(criteria);
         }
         List<ResultDocument> list = documentRepository.findResultDocumentsByCriterias(criteriaList,collectionName);
@@ -244,24 +243,24 @@ public class DocumentService {
             JSONArray mismatchArray = list.get(0).getMismatch();
             JSONArray errorArray = list.get(0).getError();
             JSONArray emptyArray = list.get(0).getEmpty();
-            JSONArray comparedFalseArray = list.get(0).getResult().getJSONArray("false");//compared中为false的数组
+            JSONArray resultFalseArray = list.get(0).getResult().getJSONArray("false");//compared中为false的数组
             String id = list.get(0).get_id();
-            String paramStr;//用例参数
+            JSONObject paramData;//用例参数
             String testcaseID1;//方法名
             JSONArray details;//详细信息
             String recordID;//recordID，后续更新状态需要
             String status;//状态：默认0，确认1，忽略2
-            if(!comparedFalseArray.isEmpty()&&comparedFalseArray.size()!=0){
-                for(int i=0;i<comparedFalseArray.size();i++){
+            if(!resultFalseArray.isEmpty()&&resultFalseArray.size()!=0){
+                for(int i=0;i<resultFalseArray.size();i++){
                     Map<String,Object> questionMap =new HashMap<String,Object>();
-                    paramStr = comparedFalseArray.getJSONObject(i).getString("paramStr");
-                    testcaseID1 = comparedFalseArray.getJSONObject(i).getString("testcaseID1");
-                    details = comparedFalseArray.getJSONObject(i).getJSONArray("details");
-                    recordID = comparedFalseArray.getJSONObject(i).getString("recordID1");
-                    status = comparedFalseArray.getJSONObject(i).getString("status");
+                    paramData = resultFalseArray.getJSONObject(i).getJSONObject("paramData1");
+                    testcaseID1 = resultFalseArray.getJSONObject(i).getString("testcaseID1");
+                    details = resultFalseArray.getJSONObject(i).getJSONArray("details");
+                    recordID = resultFalseArray.getJSONObject(i).getString("recordID1");
+                    status = resultFalseArray.getJSONObject(i).getString("status");
                     questionMap.put("status",status);
                     questionMap.put("id",id);
-                    questionMap.put("paramStr",paramStr);
+                    questionMap.put("paramData",paramData);
                     questionMap.put("testcaseID",testcaseID1);
                     questionMap.put("details",details);
                     questionMap.put("recordID",recordID);
@@ -272,13 +271,13 @@ public class DocumentService {
             if(!mismatchArray.isEmpty()&&mismatchArray.size()!=0){
                 for(int i=0;i<mismatchArray.size();i++){
                     Map<String,Object> questionMap2 =new HashMap<String,Object>();
-                    paramStr = mismatchArray.getJSONObject(i).getString("paramStr");
+                    paramData = mismatchArray.getJSONObject(i).getJSONObject("paramData");
                     testcaseID1 = mismatchArray.getJSONObject(i).getString("testcaseID");
                     recordID = mismatchArray.getJSONObject(i).getString("recordID");
                     status = mismatchArray.getJSONObject(i).getString("status");
                     questionMap2.put("status",status);
                     questionMap2.put("id",id);
-                    questionMap2.put("paramStr",paramStr);
+                    questionMap2.put("paramData",paramData);
                     questionMap2.put("testcaseID",testcaseID1);
                     questionMap2.put("recordID",recordID);
                     questionMap2.put("type","mismatch");
@@ -288,13 +287,13 @@ public class DocumentService {
             if(!errorArray.isEmpty()&&errorArray.size()!=0){
                 for(int i=0;i<errorArray.size();i++){
                     Map<String,Object> questionMap3 =new HashMap<String,Object>();
-                    paramStr = errorArray.getJSONObject(i).getString("paramStr");
+                    paramData = errorArray.getJSONObject(i).getJSONObject("paramData");
                     testcaseID1 = errorArray.getJSONObject(i).getString("testcaseID");
                     recordID = errorArray.getJSONObject(i).getString("recordID");
                     status = errorArray.getJSONObject(i).getString("status");
                     questionMap3.put("status",status);
                     questionMap3.put("id",id);
-                    questionMap3.put("paramStr",paramStr);
+                    questionMap3.put("paramData",paramData);
                     questionMap3.put("testcaseID",testcaseID1);
                     questionMap3.put("recordID",recordID);
                     questionMap3.put("type","error");
@@ -304,13 +303,13 @@ public class DocumentService {
             if(!emptyArray.isEmpty()&&emptyArray.size()!=0){
                 for(int i=0;i<emptyArray.size();i++){
                     Map<String,Object> questionMap4 =new HashMap<String,Object>();
-                    paramStr = emptyArray.getJSONObject(i).getString("paramStr");
+                    paramData = emptyArray.getJSONObject(i).getJSONObject("paramData");
                     testcaseID1 = emptyArray.getJSONObject(i).getString("testcaseID");
                     recordID = emptyArray.getJSONObject(i).getString("recordID");
                     status = emptyArray.getJSONObject(i).getString("status");
                     questionMap4.put("status",status);
                     questionMap4.put("id",id);
-                    questionMap4.put("paramStr",paramStr);
+                    questionMap4.put("paramData",paramData);
                     questionMap4.put("testcaseID",testcaseID1);
                     questionMap4.put("recordID",recordID);
                     questionMap4.put("type","empty");
@@ -359,6 +358,7 @@ public class DocumentService {
             String testcaseID1;//方法名
             String status;//状态：默认0，确认1，忽略2
             String bugDescribe;//bug描述
+            Map<String, String> interfaceMap = new HashMap<String, String>();
             if(!comparedFalseArray.isEmpty()&&comparedFalseArray.size()!=0){
                 for(int i=0;i<comparedFalseArray.size();i++){
                     Map<String,Object> questionMap =new HashMap<String,Object>();
@@ -368,6 +368,13 @@ public class DocumentService {
                     status = comparedFalseArray.getJSONObject(i).getString("status");
                     methodsAllSet.add(testcaseID1);//将方法名加入set，实现去重
                     methodsErrorSet.add(testcaseID1);
+                    String interfaceName = testcaseID1.substring(0,testcaseID1.lastIndexOf("_"));//根据方法名截取接口名
+                    if(interfaceMap.containsKey(interfaceName)){//遍历判断所有的接口名，已经存在就加1，不存在就给初始值1
+                        int val = (Integer.parseInt(interfaceMap.get(interfaceName))+1);
+                        interfaceMap.put(interfaceName, val+"");
+                    }else{
+                        interfaceMap.put(interfaceName, "1");
+                    }
                     if(("1").equals(status)){
                         questionMap.put("paramStr",paramStr);
                         questionMap.put("testcaseID",testcaseID1);
@@ -387,6 +394,13 @@ public class DocumentService {
                     status = mismatchArray.getJSONObject(i).getString("status");
                     methodsAllSet.add(testcaseID1);//将方法名加入set，实现去重
                     methodsErrorSet.add(testcaseID1);
+                    String interfaceName = testcaseID1.substring(0,testcaseID1.lastIndexOf("_"));//根据方法名截取接口名
+                    if(interfaceMap.containsKey(interfaceName)){//遍历判断所有的接口名，已经存在就加1，不存在就给初始值1
+                        int val = (Integer.parseInt(interfaceMap.get(interfaceName))+1);
+                        interfaceMap.put(interfaceName, val+"");
+                    }else{
+                        interfaceMap.put(interfaceName, "1");
+                    }
                     if(("1").equals(status)){
                         questionMap2.put("paramStr",paramStr);
                         questionMap2.put("testcaseID",testcaseID1);
@@ -406,6 +420,13 @@ public class DocumentService {
                     status = errorArray.getJSONObject(i).getString("status");
                     methodsAllSet.add(testcaseID1);//将方法名加入set，实现去重
                     methodsErrorSet.add(testcaseID1);
+                    String interfaceName = testcaseID1.substring(0,testcaseID1.lastIndexOf("_"));//根据方法名截取接口名
+                    if(interfaceMap.containsKey(interfaceName)){//遍历判断所有的接口名，已经存在就加1，不存在就给初始值1
+                        int val = (Integer.parseInt(interfaceMap.get(interfaceName))+1);
+                        interfaceMap.put(interfaceName, val+"");
+                    }else{
+                        interfaceMap.put(interfaceName, "1");
+                    }
                     if(("1").equals(status)){
                         questionMap3.put("paramStr",paramStr);
                         questionMap3.put("testcaseID",testcaseID1);
@@ -425,6 +446,13 @@ public class DocumentService {
                     status = emptyArray.getJSONObject(i).getString("status");
                     methodsAllSet.add(testcaseID1);//将方法名加入set，实现去重
                     methodsErrorSet.add(testcaseID1);
+                    String interfaceName = testcaseID1.substring(0,testcaseID1.lastIndexOf("_"));//根据方法名截取接口名
+                    if(interfaceMap.containsKey(interfaceName)){//遍历判断所有的接口名，已经存在就加1，不存在就给初始值1
+                        int val = (Integer.parseInt(interfaceMap.get(interfaceName))+1);
+                        interfaceMap.put(interfaceName, val+"");
+                    }else{
+                        interfaceMap.put(interfaceName, "1");
+                    }
                     if(("1").equals(status)){
                         questionMap4.put("paramStr",paramStr);
                         questionMap4.put("testcaseID",testcaseID1);
@@ -442,6 +470,7 @@ public class DocumentService {
                 }
             }
             reportMap.put("bugList",bugList);//将缺陷列表放入结果map中
+            reportMap.put("interfaceErrorMap",interfaceMap);//将接口错误用例数放入结果map中-------柱状图
         }
         /*---------------------查询计划集合-------------------------*/
         List<Criteria> criteriaList2 = new ArrayList<>();
@@ -510,8 +539,8 @@ public class DocumentService {
             double thisTestcasePass = comparedTrueArray.size();
             double testcasePassRate = divide(thisTestcasePass,thisTestcases,4);
             reportMap.put("testcasePassRate",testcasePassRate);
+            //各接口错误用例数  柱状图--------查询对比结果中已计算  interfaceMap
         }
-
         //将map放入一个list中，可能业务扩展需求
         reportList.add(reportMap);
         return reportList;

@@ -49,21 +49,21 @@ public class CustomDocumentRepositoryImpl implements CustomDocumentRepository {
     }
 
     @Override
-    public List<Document> findQuestionCollection(String collectionName){
+    public List<ResultDocument> findQuestionCollection(String collectionName){
         logger.info("get all documents by collectionName in CustomDocumentRepositoryImpl "+collectionName);
-        Criteria criteria = new Criteria();
+       /* Criteria criteria = new Criteria();
         Criteria criteria2 = new Criteria();
         Criteria criteria3 = new Criteria();
         Criteria criteria4 = new Criteria();
         criteria.and("data.time_stamp").ne("");
         criteria2.and("data.time_stamp").ne(null);
         criteria3.and("status").is(Status.Created);
-        criteria4.andOperator(criteria,criteria2,criteria3);
+        criteria4.andOperator(criteria,criteria2,criteria3);*/
         Query query = new Query();
-        query.addCriteria(criteria4);
+        //query.addCriteria(criteria4);
         //query.addCriteria(Criteria.where("status").is(Status.Created));
         //query.addCriteria(Criteria.where("data.time_stamp").ne("").ne(null));
-        return mongoTemplate.find(query,Document.class,collectionName);
+        return mongoTemplate.find(query,ResultDocument.class,collectionName);
     }
 
     @Override

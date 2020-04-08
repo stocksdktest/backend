@@ -123,10 +123,10 @@ public class DocumentController {
      * @return
      */
     @GetMapping("/questionplan")
-    public List<Document> findQuestionCollection(
+    public List<ResultDocument> findQuestionCollection(
             @RequestParam(value = "collectionName", defaultValue = "null") String collectionName) {
             logger.info("get all documents by collectionName " + collectionName);
-            List<Document> list = this.documentService.findQuestionCollection(collectionName);
+            List<ResultDocument> list = this.documentService.findQuestionCollection(collectionName);
             return list;
     }
 

@@ -52,6 +52,21 @@ public class TestResultGatewayController {
     }
 
     /**
+     * 问题列表页面已有对比结果的计划信息查询(直接查询所有对比结果集合的信息)
+     * @return
+     */
+    @PostMapping("/questionPlan")
+    public JSONArray getQuestionPlanInformation(){ RestTemplate restTemplate = new RestTemplate();
+        Map<String, Object> params = new HashMap<>();
+        params.put("collectionName", "testResult");
+        String uri;
+        uri = rehost + "/api/questionplan/?collectionName={collectionName}";
+        ResponseEntity<JSONArray> response = restTemplate.getForEntity(uri,JSONArray.class,params);
+        logger.info(response.getBody().toString());
+        return response.getBody();
+    }
+
+    /**
      * 问题列表查询
      * @param filterFactors
      * @return
@@ -118,7 +133,9 @@ public class TestResultGatewayController {
     @PutMapping("/airflowTestResult/{id}")
     public JSONObject getTestResultFromAirflow(@PathVariable String id,
             @RequestBody JSONArray filterFactors,
-            @RequestParam(value = "collectionName",defaultValue = "") String collectionName){
+            @RequestParam(value = "collectionName",defaultValue = "") String collectionName,
+            @RequestParam(value = "planName",defaultValue = "") String planName,
+            @RequestParam(value = "quoteDetail",defaultValue = "") String quoteDetail){//0基准，1行情的标志
         RestTemplate restTemplate = new RestTemplate();
         RestTemplate restTemplate2 = new RestTemplate();
         Map<String, Object> params = new HashMap<>();
@@ -152,6 +169,8 @@ public class TestResultGatewayController {
             //3.将查询的对比结果插入平台数据库
             JSONObject items = JSONObject.parseObject(res.body().string());
             JSONObject result = items.getJSONArray("_items").getJSONObject(0);
+            result.put("planName",planName);
+            result.put("quoteDetail",quoteDetail);
             result.remove("_created");//去除okhttp请求带的多余参数
             result.remove("_updated");
             result.remove("_etag");

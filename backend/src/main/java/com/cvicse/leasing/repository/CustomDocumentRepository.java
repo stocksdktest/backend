@@ -22,7 +22,7 @@ public interface CustomDocumentRepository {
     List<Document> findAllDocumentsInCollection(String collectionName);
 
     //查询问题列表中有返回对比结果的计划集合信息
-    List<Document> findQuestionCollection(String collectionName);
+    List<ResultDocument> findQuestionCollection(String collectionName);
     //查找所有的collection
     Set<String> findCollections();
 

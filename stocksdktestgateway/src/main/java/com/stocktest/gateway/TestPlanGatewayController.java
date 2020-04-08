@@ -82,21 +82,6 @@ public class TestPlanGatewayController {
         return response.getBody();
     }
 
-    /**
-     * 问题列表页面已有对比结果的计划信息查询
-     * @return
-     */
-    @PostMapping("/questionPlan")
-    public JSONArray getQuestionPlanInformation(){ RestTemplate restTemplate = new RestTemplate();
-        Map<String, Object> params = new HashMap<>();
-        params.put("collectionName", "testPlan");
-        String uri;
-        uri = rehost + "/api/questionplan/?collectionName={collectionName}";
-        ResponseEntity<JSONArray> response = restTemplate.getForEntity(uri,JSONArray.class,params);
-        logger.info(response.getBody().toString());
-        return response.getBody();
-    }
-
     @GetMapping("/{id}")
     public JSONObject getTestPlanById(@PathVariable String id){
         RestTemplate restTemplate = new RestTemplate();
