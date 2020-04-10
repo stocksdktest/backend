@@ -133,13 +133,14 @@ public class TestResultGatewayController {
     @PutMapping("/airflowTestResult/{id}")
     public JSONObject getTestResultFromAirflow(@PathVariable String id,
             @RequestBody JSONArray filterFactors,
-            @RequestParam(value = "collectionName",defaultValue = "") String collectionName,
-            @RequestParam(value = "planName",defaultValue = "") String planName,
-            @RequestParam(value = "quoteDetail",defaultValue = "") String quoteDetail){//0基准，1行情的标志
+            @RequestParam(value = "collectionName",defaultValue = "") String collectionName){//0基准，1行情的标志
         RestTemplate restTemplate = new RestTemplate();
         RestTemplate restTemplate2 = new RestTemplate();
         Map<String, Object> params = new HashMap<>();
         String uri;
+        String planName = filterFactors.getJSONObject(2).getString("planName");//计划名
+        String quoteDetail = filterFactors.getJSONObject(3).getString("quoteDetail");//对比类型  0基准1行情
+        JSONArray detailType = filterFactors.getJSONObject(4).getJSONArray("detailType");//详细信息类型（不同版本，不同环境，不同环境不同版本）
         //1.更新执行状态
         JSONObject executeStatus = filterFactors.getJSONObject(0);//更新执行状态的条件
         String state = executeStatus.getJSONArray("content").getJSONObject(0).getString("value");
@@ -171,6 +172,8 @@ public class TestResultGatewayController {
             JSONObject result = items.getJSONArray("_items").getJSONObject(0);
             result.put("planName",planName);
             result.put("quoteDetail",quoteDetail);
+            result.put("detailType",detailType);
+            result.put("planID",id);
             result.remove("_created");//去除okhttp请求带的多余参数
             result.remove("_updated");
             result.remove("_etag");

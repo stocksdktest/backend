@@ -122,7 +122,6 @@ public class TestInformationGatewayController {
             , @RequestParam(value = "embeddedDocument",defaultValue = "true") boolean embeddedDocument) {
         RestTemplate restTemplate = new RestTemplate();
         String uri = rehost + "/api/documents2/{id}?collectionName={collectionName}"; //update方法对应的uri，不用更改
-
         Map<String, String> pathParam = new HashMap<>();
         pathParam.put("id", id);
         pathParam.put("collectionName","testInformation"); //只需考虑这行，将collectionName更改即可

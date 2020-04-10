@@ -75,7 +75,7 @@ public class DocumentController {
      * @return
      */
     @GetMapping("/questionList")
-    public List<Map<String,Object>> getQuestionList(
+    public JSONArray getQuestionList(
             @RequestParam(value = "collectionName", defaultValue = "null") String collectionName
             , @RequestParam(value = "filterFactors") String filterFactors) {
         logger.info(filterFactors);

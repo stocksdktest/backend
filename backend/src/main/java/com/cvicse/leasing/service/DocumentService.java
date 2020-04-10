@@ -229,7 +229,7 @@ public class DocumentService {
      * @param collectionName
      * @return
      */
-    public List<Map<String,Object>> getResultDocumentsByCriteriaList(JSONArray filters,String collectionName){
+    public JSONArray getResultDocumentsByCriteriaList(JSONArray filters,String collectionName){
         List<Criteria> criteriaList = new ArrayList<>();
         for(int i=0;i<filters.size();i++){
             JSONObject filterFactor = filters.getJSONObject(i);
@@ -238,86 +238,135 @@ public class DocumentService {
             criteriaList.add(criteria);
         }
         List<ResultDocument> list = documentRepository.findResultDocumentsByCriterias(criteriaList,collectionName);
-        List<Map<String,Object>> questionList =  new ArrayList<Map<String,Object>>();
+        JSONArray questionList =  new JSONArray();
         if(list!=null && !list.isEmpty()){
             JSONArray mismatchArray = list.get(0).getMismatch();
             JSONArray errorArray = list.get(0).getError();
             JSONArray emptyArray = list.get(0).getEmpty();
             JSONArray resultFalseArray = list.get(0).getResult().getJSONArray("false");//compared中为false的数组
+            JSONArray resultArray = new JSONArray();
+            resultArray.add(mismatchArray);
+            resultArray.add(errorArray);
+            resultArray.add(emptyArray);
+            resultArray.add(resultFalseArray);
             String id = list.get(0).get_id();
-            JSONObject paramData;//用例参数
-            String testcaseID1;//方法名
-            JSONArray details;//详细信息
-            String recordID;//recordID，后续更新状态需要
-            String status;//状态：默认0，确认1，忽略2
-            if(!resultFalseArray.isEmpty()&&resultFalseArray.size()!=0){
-                for(int i=0;i<resultFalseArray.size();i++){
-                    Map<String,Object> questionMap =new HashMap<String,Object>();
-                    paramData = resultFalseArray.getJSONObject(i).getJSONObject("paramData1");
-                    testcaseID1 = resultFalseArray.getJSONObject(i).getString("testcaseID1");
-                    details = resultFalseArray.getJSONObject(i).getJSONArray("details");
-                    recordID = resultFalseArray.getJSONObject(i).getString("recordID1");
-                    status = resultFalseArray.getJSONObject(i).getString("status");
-                    questionMap.put("status",status);
-                    questionMap.put("id",id);
-                    questionMap.put("paramData",paramData);
-                    questionMap.put("testcaseID",testcaseID1);
-                    questionMap.put("details",details);
-                    questionMap.put("recordID",recordID);
-                    questionMap.put("type","false");
-                    questionList.add(questionMap);
-                }
-            }
-            if(!mismatchArray.isEmpty()&&mismatchArray.size()!=0){
-                for(int i=0;i<mismatchArray.size();i++){
-                    Map<String,Object> questionMap2 =new HashMap<String,Object>();
-                    paramData = mismatchArray.getJSONObject(i).getJSONObject("paramData");
-                    testcaseID1 = mismatchArray.getJSONObject(i).getString("testcaseID");
-                    recordID = mismatchArray.getJSONObject(i).getString("recordID");
-                    status = mismatchArray.getJSONObject(i).getString("status");
-                    questionMap2.put("status",status);
-                    questionMap2.put("id",id);
-                    questionMap2.put("paramData",paramData);
-                    questionMap2.put("testcaseID",testcaseID1);
-                    questionMap2.put("recordID",recordID);
-                    questionMap2.put("type","mismatch");
-                    questionList.add(questionMap2);
-                }
-            }
-            if(!errorArray.isEmpty()&&errorArray.size()!=0){
-                for(int i=0;i<errorArray.size();i++){
-                    Map<String,Object> questionMap3 =new HashMap<String,Object>();
-                    paramData = errorArray.getJSONObject(i).getJSONObject("paramData");
-                    testcaseID1 = errorArray.getJSONObject(i).getString("testcaseID");
-                    recordID = errorArray.getJSONObject(i).getString("recordID");
-                    status = errorArray.getJSONObject(i).getString("status");
-                    questionMap3.put("status",status);
-                    questionMap3.put("id",id);
-                    questionMap3.put("paramData",paramData);
-                    questionMap3.put("testcaseID",testcaseID1);
-                    questionMap3.put("recordID",recordID);
-                    questionMap3.put("type","error");
-                    questionList.add(questionMap3);
-                }
-            }
-            if(!emptyArray.isEmpty()&&emptyArray.size()!=0){
-                for(int i=0;i<emptyArray.size();i++){
-                    Map<String,Object> questionMap4 =new HashMap<String,Object>();
-                    paramData = emptyArray.getJSONObject(i).getJSONObject("paramData");
-                    testcaseID1 = emptyArray.getJSONObject(i).getString("testcaseID");
-                    recordID = emptyArray.getJSONObject(i).getString("recordID");
-                    status = emptyArray.getJSONObject(i).getString("status");
-                    questionMap4.put("status",status);
-                    questionMap4.put("id",id);
-                    questionMap4.put("paramData",paramData);
-                    questionMap4.put("testcaseID",testcaseID1);
-                    questionMap4.put("recordID",recordID);
-                    questionMap4.put("type","empty");
-                    questionList.add(questionMap4);
-                }
-            }
+            String quoteDetail = list.get(0).getQuoteDetail();//0基准1行情  排序待定
+            questionList = getResultInfor(resultArray,id,quoteDetail);//抽成公共方法，取值放值
         }
         return questionList;
+    }
+
+    /**
+     * 多种比对类型信息查询过滤方法
+     * @param resultArray
+     * @param id
+     * @param quoteDetail 0 基准  1行情
+     * @return
+     */
+    public JSONArray getResultInfor(JSONArray resultArray,String id,String quoteDetail){
+        JSONArray questionMap = new JSONArray();
+        JSONObject paramData;//用例参数
+        String quoteParamData;//用例参数  还是string没有改成统一JSON格式
+        String testcaseID1;//方法名
+        JSONArray details;//详细信息
+        String recordID;//recordID，后续更新状态需要
+        String status;//状态：默认0，确认1，忽略2
+        //行情结果查询字段
+        JSONArray missTime;//两边错过的datetime
+        int number;//datetime的总条数
+        String missRate;//datetime错过率
+        String matchRate;//datetime正确率
+        String errorRate;//datetime错误率
+        JSONArray result;//每个用例中的详细信息
+        String dateTime;//行情执行的时间
+        if("0".equals(quoteDetail)){//基准比较的值查询
+            for(int i=0;i<resultArray.size();i++){//获取错误类型数组中的一个，数组
+                JSONArray eachArray = resultArray.getJSONArray(i);
+                if(!eachArray.isEmpty()&&eachArray.size()!=0){
+                    for(int j=0;j<eachArray.size();j++){
+                        Map<String,Object> eachQuestionMap = new HashMap<>();
+                        paramData = eachArray.getJSONObject(j).getJSONObject("paramData");
+                        testcaseID1 = eachArray.getJSONObject(j).getString("testcaseID");
+                        recordID = eachArray.getJSONObject(j).getString("recordID");
+                        status = eachArray.getJSONObject(j).getString("status");
+                        if(i==0){
+                            eachQuestionMap.put("type","mismatch");
+                        }else if(i==1){
+                            eachQuestionMap.put("type","error");
+                        }else if(i==2){
+                            eachQuestionMap.put("type","empty");
+                        }else{
+                            eachQuestionMap.put("type","false");
+                            recordID = eachArray.getJSONObject(j).getString("recordID1");
+                            testcaseID1 = eachArray.getJSONObject(j).getString("testcaseID1");
+                            paramData = eachArray.getJSONObject(j).getJSONObject("paramData1");
+                            details = eachArray.getJSONObject(j).getJSONArray("details");
+                            eachQuestionMap.put("details",details);
+                        }
+                        eachQuestionMap.put("status",status);
+                        eachQuestionMap.put("id",id);
+                        eachQuestionMap.put("paramData",paramData);
+                        eachQuestionMap.put("testcaseID",testcaseID1);
+                        eachQuestionMap.put("recordID",recordID);
+                        eachQuestionMap.put("quoteDetail",quoteDetail);
+                        questionMap.add(eachQuestionMap);
+                    }
+                }
+            }
+        }else if("1".equals(quoteDetail)){//行情比较的查询
+            for(int i=0;i<resultArray.size();i++){//获取错误类型数组中的一个，数组
+                JSONArray eachArray = resultArray.getJSONArray(i);
+                if(!eachArray.isEmpty()&&eachArray.size()!=0){
+                    for(int j=0;j<eachArray.size();j++){
+                        JSONObject eachQuestionMap =new JSONObject();
+                        JSONArray questionDetails = new JSONArray();//存所有details和datetime的数组
+                        quoteParamData = eachArray.getJSONObject(j).getString("paramData");
+                        testcaseID1 = eachArray.getJSONObject(j).getString("testcaseID");
+                        recordID = eachArray.getJSONObject(j).getString("recordID");
+                        status = eachArray.getJSONObject(j).getString("status");
+                        missTime = eachArray.getJSONObject(j).getJSONArray("miss_time");
+                        number = eachArray.getJSONObject(j).getIntValue("number");
+                        missRate = eachArray.getJSONObject(j).getString("miss_rate");
+                        matchRate = eachArray.getJSONObject(j).getString("match_rate");
+                        errorRate = eachArray.getJSONObject(j).getString("error_rate");
+                        result = eachArray.getJSONObject(j).getJSONArray("result");
+                        for(int z=0;z<result.size();z++){
+                            JSONObject questionDetail = new JSONObject();//存details和datetime
+                            details = result.getJSONObject(z).getJSONArray("details");
+                            dateTime = result.getJSONObject(z).getString("datetime");
+                            questionDetail.put("details",details);
+                            questionDetail.put("dateTime",dateTime);
+                            questionDetails.add(questionDetail);
+                        }
+                        if(i==0){
+                            eachQuestionMap.put("type","mismatch");
+                        }else if(i==1){
+                            eachQuestionMap.put("type","error");
+                        }else if(i==2){
+                            eachQuestionMap.put("type","empty");
+                        }else{
+                            eachQuestionMap.put("type","false");
+                        }
+                        eachQuestionMap.put("id",id);
+                        eachQuestionMap.put("quoteDetail",quoteDetail);
+                        eachQuestionMap.put("paramData",quoteParamData);
+                        eachQuestionMap.put("testcaseID",testcaseID1);
+                        eachQuestionMap.put("recordID",recordID);
+                        eachQuestionMap.put("status",status);
+                        eachQuestionMap.put("missTime",missTime);
+                        eachQuestionMap.put("number",number);
+                        eachQuestionMap.put("missRate",missRate);
+                        eachQuestionMap.put("matchRate",matchRate);
+                        eachQuestionMap.put("errorRate",errorRate);
+                        eachQuestionMap.put("questionDetails",questionDetails);
+                        questionMap.add(eachQuestionMap);
+                    }
+                }
+            }
+        }else{//排序
+
+        }
+        return questionMap;
     }
 
     /**
@@ -346,6 +395,7 @@ public class DocumentService {
         JSONArray emptyArray = new JSONArray();
         JSONArray comparedFalseArray = new JSONArray();
         JSONArray comparedTrueArray = new JSONArray();
+        String planID = "";
         if(list!=null && !list.isEmpty()){
             mismatchArray = list.get(0).getMismatch();
             errorArray = list.get(0).getError();
@@ -353,6 +403,7 @@ public class DocumentService {
             comparedFalseArray = list.get(0).getResult().getJSONArray("false");//compared中为false的数组
             comparedTrueArray = list.get(0).getResult().getJSONArray("true");//compared中为false的数组
             String id = list.get(0).get_id();
+            planID = list.get(0).getPlanID();//计划ID
             List<Map<String,Object>> questionList =  new ArrayList<Map<String,Object>>();
             String paramStr;//用例参数
             String testcaseID1;//方法名
@@ -362,7 +413,7 @@ public class DocumentService {
             if(!comparedFalseArray.isEmpty()&&comparedFalseArray.size()!=0){
                 for(int i=0;i<comparedFalseArray.size();i++){
                     Map<String,Object> questionMap =new HashMap<String,Object>();
-                    paramStr = comparedFalseArray.getJSONObject(i).getString("paramStr");
+                    paramStr = comparedFalseArray.getJSONObject(i).getString("paramData1");
                     testcaseID1 = comparedFalseArray.getJSONObject(i).getString("testcaseID1");
                     bugDescribe = comparedFalseArray.getJSONObject(i).getString("bugDescribe");
                     status = comparedFalseArray.getJSONObject(i).getString("status");
@@ -388,7 +439,7 @@ public class DocumentService {
             if(!mismatchArray.isEmpty()&&mismatchArray.size()!=0){
                 for(int i=0;i<mismatchArray.size();i++){
                     Map<String,Object> questionMap2 =new HashMap<String,Object>();
-                    paramStr = mismatchArray.getJSONObject(i).getString("paramStr");
+                    paramStr = mismatchArray.getJSONObject(i).getString("paramData");
                     testcaseID1 = mismatchArray.getJSONObject(i).getString("testcaseID");
                     bugDescribe = mismatchArray.getJSONObject(i).getString("bugDescribe");
                     status = mismatchArray.getJSONObject(i).getString("status");
@@ -414,7 +465,7 @@ public class DocumentService {
             if(!errorArray.isEmpty()&&errorArray.size()!=0){
                 for(int i=0;i<errorArray.size();i++){
                     Map<String,Object> questionMap3 =new HashMap<String,Object>();
-                    paramStr = errorArray.getJSONObject(i).getString("paramStr");
+                    paramStr = errorArray.getJSONObject(i).getString("paramData");
                     testcaseID1 = errorArray.getJSONObject(i).getString("testcaseID");
                     bugDescribe = errorArray.getJSONObject(i).getString("bugDescribe");
                     status = errorArray.getJSONObject(i).getString("status");
@@ -440,7 +491,7 @@ public class DocumentService {
             if(!emptyArray.isEmpty()&&emptyArray.size()!=0){
                 for(int i=0;i<emptyArray.size();i++){
                     Map<String,Object> questionMap4 =new HashMap<String,Object>();
-                    paramStr = emptyArray.getJSONObject(i).getString("paramStr");
+                    paramStr = emptyArray.getJSONObject(i).getString("paramData");
                     testcaseID1 = emptyArray.getJSONObject(i).getString("testcaseID");
                     bugDescribe = emptyArray.getJSONObject(i).getString("bugDescribe");
                     status = emptyArray.getJSONObject(i).getString("status");
@@ -477,7 +528,7 @@ public class DocumentService {
         for(int i=0;i<filters.size();i++){
             JSONObject filterFactor = filters.getJSONObject(i);
             DocumentSearchFactor documentSearchFactor = new DocumentSearchFactor(filterFactor);
-            Criteria criteria = Criteria.where(("data.time_stamp")).is(documentSearchFactor.getMatchValue());
+            Criteria criteria = Criteria.where(("_id")).is(planID);
             criteriaList2.add(criteria);
         }
         collectionName = "testPlan";
@@ -508,8 +559,8 @@ public class DocumentService {
             collectionName = "testInformation";
             List<Document> versionList = documentRepository.findDocumentsByCriterias(criteriaList3,collectionName);
             JSONArray interfacesList = versionList.get(0).getData().getJSONArray("interfaces");
-            double versionMethods = 0.00;//该版本下的方法总数
-            double versionTestcases = 0.00;//该版本下的用例总数
+            int versionMethods = 0;//该版本下的方法总数
+            int versionTestcases = 0;//该版本下的用例总数
             for(int i=0;i<interfacesList.size();i++){
                 JSONArray methodsList = interfacesList.getJSONObject(i).getJSONArray("methods");
                 if(methodsList!=null){
@@ -523,40 +574,35 @@ public class DocumentService {
                 }
             }
             //方法覆盖率：  本次计划总方法数/本版本总方法数
-            double thisMethods = methodsAllSet.toArray().length;
-            double methodCoverRate = divide(thisMethods,versionMethods,4);//方法覆盖率
-            reportMap.put("methodCoverRate",methodCoverRate);
+            int thisMethods = methodsAllSet.toArray().length;
+            JSONArray methodCoverRate = new JSONArray();
+            methodCoverRate.add(thisMethods);
+            methodCoverRate.add(versionMethods);
+            reportMap.put("methodCoverRate",methodCoverRate);//方法覆盖率
             //方法通过率：  1-本次计划方法错误数/本次计划总方法数
-            double methodsNotPass = methodsErrorSet.toArray().length;//先算错误未通过的个数
-            double methodNotPassRate = divide(methodsNotPass,thisMethods,4);
-            double methodPassRate = 1.00-methodNotPassRate;
+            int methodsNotPass = methodsErrorSet.toArray().length;//先算错误未通过的个数
+            int methodPass = thisMethods - methodsNotPass;//通过的方法个数
+            JSONArray methodPassRate = new JSONArray();
+            methodPassRate.add(methodPass);
+            methodPassRate.add(thisMethods);
             reportMap.put("methodPassRate",methodPassRate);
             //用例覆盖率  本次计划用例个数/本版本总用例数
-            double thisTestcases = comparedFalseArray.size()+comparedTrueArray.size()+emptyArray.size()+mismatchArray.size()+errorArray.size();//本次计划总用例数
-            double testcaseCoverRate = divide(thisTestcases,versionTestcases,4);
+            int thisTestcases = comparedFalseArray.size()+comparedTrueArray.size()+emptyArray.size()+mismatchArray.size()+errorArray.size();//本次计划总用例数
+            JSONArray testcaseCoverRate = new JSONArray();
+            testcaseCoverRate.add(thisTestcases);
+            testcaseCoverRate.add(versionTestcases);
             reportMap.put("testcaseCoverRate",testcaseCoverRate);
             //用例通过率  本次计划用例正确数/本次使用总用例数
-            double thisTestcasePass = comparedTrueArray.size();
-            double testcasePassRate = divide(thisTestcasePass,thisTestcases,4);
+            int thisTestcasePass = comparedTrueArray.size();
+            JSONArray testcasePassRate = new JSONArray();
+            testcasePassRate.add(thisTestcasePass);
+            testcasePassRate.add(thisTestcases);
             reportMap.put("testcasePassRate",testcasePassRate);
             //各接口错误用例数  柱状图--------查询对比结果中已计算  interfaceMap
         }
         //将map放入一个list中，可能业务扩展需求
         reportList.add(reportMap);
         return reportList;
-    }
-
-    /**
-     * 提供精确的除法运算方法divide
-     * @param value1 被除数
-     * @param value2 除数
-     * @param scale 精确范围
-     * @return 两个参数的商
-     */
-    public double divide(double value1,double value2,int scale){
-        BigDecimal b1 = new BigDecimal(Double.valueOf(value1));
-        BigDecimal b2 = new BigDecimal(Double.valueOf(value2));
-        return b1.divide(b2,scale,BigDecimal.ROUND_HALF_UP).doubleValue();
     }
 
     /**

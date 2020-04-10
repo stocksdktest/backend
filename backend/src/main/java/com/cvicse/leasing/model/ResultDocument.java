@@ -32,6 +32,10 @@ public class ResultDocument {
 
     private String quoteDetail;
 
+    private JSONArray detailType;
+
+    private String planID;
+
     public String get_id() {
         return _id;
     }
@@ -120,11 +124,27 @@ public class ResultDocument {
         this.quoteDetail = quoteDetail;
     }
 
+    public JSONArray getDetailType() {
+        return detailType;
+    }
+
+    public void setDetailType(JSONArray detailType) {
+        this.detailType = detailType;
+    }
+
+    public String getPlanID() {
+        return planID;
+    }
+
+    public void setPlanID(String planID) {
+        this.planID = planID;
+    }
+
     @Override
     public String toString() {
 //        System.out.println("bug" + JSON.toJSONString(data));
         return String.format(
-                "{_id:'%s', jobID:'%s', dagID:'%s',planName:'%s',runnerID1:'%s',runnerID2:'%s', result:'%s',mismatch:'%s',error:'%s',empty:'%s',quoteDetail:'%s'}",
-                _id, jobID, dagID,planName,runnerID1,runnerID2, JSON.toJSONString(result), JSON.toJSONString(mismatch), JSON.toJSONString(error), JSON.toJSONString(empty),quoteDetail);
+                "{_id:'%s', jobID:'%s', dagID:'%s',planName:'%s',runnerID1:'%s',runnerID2:'%s', result:'%s',mismatch:'%s',error:'%s',empty:'%s',quoteDetail:'%s',detailType:'%s',planID:'%s'}",
+                _id, jobID, dagID,planName,runnerID1,runnerID2, JSON.toJSONString(result), JSON.toJSONString(mismatch), JSON.toJSONString(error), JSON.toJSONString(empty),quoteDetail,JSON.toJSONString(detailType),planID);
     }
 }
