@@ -17,6 +17,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -45,7 +46,9 @@ public class CustomDocumentRepositoryImpl implements CustomDocumentRepository {
         logger.info("get all documents by collectionName in CustomDocumentRepositoryImpl "+collectionName);
         Query query = new Query();
         query.addCriteria(Criteria.where("status").is("Created"));
-        return mongoTemplate.find(query,Document.class,collectionName);
+        List<Document> list = mongoTemplate.find(query,Document.class,collectionName);
+        Collections.reverse(list);//list元素倒序
+        return list;
     }
 
     @Override

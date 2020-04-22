@@ -3,6 +3,7 @@ package com.cvicse.leasing.service;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.cvicse.leasing.model.*;
 import com.cvicse.leasing.repository.DocumentRepository;
 //import com.cvicse.leasingauthmanage.model.User;
@@ -28,6 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 //import com.mongodb.QueryBuilder;
 import java.math.BigDecimal;
 import java.util.*;
+
+import static java.util.Spliterators.iterator;
 
 @Service
 public class DocumentService {
@@ -243,15 +246,26 @@ public class DocumentService {
             JSONArray mismatchArray = list.get(0).getMismatch();
             JSONArray errorArray = list.get(0).getError();
             JSONArray emptyArray = list.get(0).getEmpty();
-            JSONArray resultFalseArray = list.get(0).getResult().getJSONArray("false");//compared中为false的数组
+            JSONArray resultFalseArray = list.get(0).getResult().getJSONArray("false");//result中为false的数组
             JSONArray resultArray = new JSONArray();
             resultArray.add(mismatchArray);
             resultArray.add(errorArray);
             resultArray.add(emptyArray);
             resultArray.add(resultFalseArray);
+            JSONArray detailType = list.get(0).getDetailType();//对比环境或者版本的标识;
+            if(list.get(0).getResult().size()>2){//则为排序类型结果
+                JSONArray resultSort1UnknownArray = list.get(0).getResult().getJSONObject("sort1").getJSONArray("unknown");//result中为sort1下为unknown的数组
+                JSONArray resultSort2UnknownArray = list.get(0).getResult().getJSONObject("sort2").getJSONArray("unknown");//result中为sort2下为unknown的数组
+                JSONArray resultSort1FalseArray = list.get(0).getResult().getJSONObject("sort1").getJSONArray("false");//result中为sort1下为false的数组
+                JSONArray resultSort2FalseArray = list.get(0).getResult().getJSONObject("sort2").getJSONArray("false");//result中为sort2下为false的数组
+                resultArray.add(resultSort1UnknownArray);
+                resultArray.add(resultSort2UnknownArray);
+                resultArray.add(resultSort1FalseArray);
+                resultArray.add(resultSort2FalseArray);
+            }
             String id = list.get(0).get_id();
-            String quoteDetail = list.get(0).getQuoteDetail();//0基准1行情  排序待定
-            questionList = getResultInfor(resultArray,id,quoteDetail);//抽成公共方法，取值放值
+            String quoteDetail = list.get(0).getQuoteDetail();//0基准1行情  排序2
+            questionList = getResultInfor(resultArray,id,quoteDetail,detailType);//抽成公共方法，取值放值
         }
         return questionList;
     }
@@ -263,8 +277,8 @@ public class DocumentService {
      * @param quoteDetail 0 基准  1行情
      * @return
      */
-    public JSONArray getResultInfor(JSONArray resultArray,String id,String quoteDetail){
-        JSONArray questionMap = new JSONArray();
+    public JSONArray getResultInfor(JSONArray resultArray,String id,String quoteDetail,JSONArray detailType){
+        JSONArray questionList = new JSONArray();
         JSONObject paramData;//用例参数
         String quoteParamData;//用例参数  还是string没有改成统一JSON格式
         String testcaseID1;//方法名
@@ -273,16 +287,17 @@ public class DocumentService {
         String status;//状态：默认0，确认1，忽略2
         //行情结果查询字段
         JSONArray missTime;//两边错过的datetime
-        int number;//datetime的总条数
+        int numbers;//datetime的总条数
         String missRate;//datetime错过率
         String matchRate;//datetime正确率
         String errorRate;//datetime错误率
         JSONArray result;//每个用例中的详细信息
         String dateTime;//行情执行的时间
+        String errorMsg = "";//排序每个用例报错信息
         if("0".equals(quoteDetail)){//基准比较的值查询
             for(int i=0;i<resultArray.size();i++){//获取错误类型数组中的一个，数组
                 JSONArray eachArray = resultArray.getJSONArray(i);
-                if(!eachArray.isEmpty()&&eachArray.size()!=0){
+                if(eachArray.size()!=0){
                     for(int j=0;j<eachArray.size();j++){
                         Map<String,Object> eachQuestionMap = new HashMap<>();
                         paramData = eachArray.getJSONObject(j).getJSONObject("paramData");
@@ -309,14 +324,15 @@ public class DocumentService {
                         eachQuestionMap.put("testcaseID",testcaseID1);
                         eachQuestionMap.put("recordID",recordID);
                         eachQuestionMap.put("quoteDetail",quoteDetail);
-                        questionMap.add(eachQuestionMap);
+                        eachQuestionMap.put("detailType",detailType);
+                        questionList.add(eachQuestionMap);
                     }
                 }
             }
         }else if("1".equals(quoteDetail)){//行情比较的查询
             for(int i=0;i<resultArray.size();i++){//获取错误类型数组中的一个，数组
                 JSONArray eachArray = resultArray.getJSONArray(i);
-                if(!eachArray.isEmpty()&&eachArray.size()!=0){
+                if(eachArray.size()!=0){
                     for(int j=0;j<eachArray.size();j++){
                         JSONObject eachQuestionMap =new JSONObject();
                         JSONArray questionDetails = new JSONArray();//存所有details和datetime的数组
@@ -325,7 +341,7 @@ public class DocumentService {
                         recordID = eachArray.getJSONObject(j).getString("recordID");
                         status = eachArray.getJSONObject(j).getString("status");
                         missTime = eachArray.getJSONObject(j).getJSONArray("miss_time");
-                        number = eachArray.getJSONObject(j).getIntValue("number");
+                        numbers = eachArray.getJSONObject(j).getIntValue("numbers");
                         missRate = eachArray.getJSONObject(j).getString("miss_rate");
                         matchRate = eachArray.getJSONObject(j).getString("match_rate");
                         errorRate = eachArray.getJSONObject(j).getString("error_rate");
@@ -354,19 +370,66 @@ public class DocumentService {
                         eachQuestionMap.put("recordID",recordID);
                         eachQuestionMap.put("status",status);
                         eachQuestionMap.put("missTime",missTime);
-                        eachQuestionMap.put("number",number);
+                        eachQuestionMap.put("number",numbers);
                         eachQuestionMap.put("missRate",missRate);
                         eachQuestionMap.put("matchRate",matchRate);
                         eachQuestionMap.put("errorRate",errorRate);
                         eachQuestionMap.put("questionDetails",questionDetails);
-                        questionMap.add(eachQuestionMap);
+                        eachQuestionMap.put("detailType",detailType);
+                        questionList.add(eachQuestionMap);
                     }
                 }
             }
         }else{//排序
-
+            for(int i=0;i<resultArray.size();i++){//获取错误类型数组中的一个，数组
+                JSONArray eachArray = resultArray.getJSONArray(i);
+                if(eachArray.size()!=0){
+                    for(int j=0;j<eachArray.size();j++){
+                        Map<String,Object> eachQuestionMap = new HashMap<>();
+                        paramData = eachArray.getJSONObject(j).getJSONObject("paramData");
+                        testcaseID1 = eachArray.getJSONObject(j).getString("testcaseID");
+                        recordID = eachArray.getJSONObject(j).getString("recordID");
+                        status = eachArray.getJSONObject(j).getString("status");
+                        if(i==0){
+                            eachQuestionMap.put("type","mismatch");
+                        }else if(i==1){
+                            eachQuestionMap.put("type","error");
+                        }else if(i==2){
+                            eachQuestionMap.put("type","empty");
+                        }else if(i==3){
+                            eachQuestionMap.put("type","false");
+                            recordID = eachArray.getJSONObject(j).getString("recordID1");
+                            testcaseID1 = eachArray.getJSONObject(j).getString("testcaseID1");
+                            paramData = eachArray.getJSONObject(j).getJSONObject("paramData1");
+                            details = eachArray.getJSONObject(j).getJSONArray("details");
+                            eachQuestionMap.put("details",details);
+                        }else if(i==4){
+                            eachQuestionMap.put("type","sort1_unknown");
+                        }else if(i==5){
+                            eachQuestionMap.put("type","sort2_unknown");
+                        }else if(i==6){
+                            eachQuestionMap.put("type","sort1_false");
+                        }else{
+                            eachQuestionMap.put("type","sort2_false");
+                        }
+                        errorMsg = eachArray.getJSONObject(j).getString("error_msg");
+                        if(!"".equals(errorMsg)&&errorMsg!=null){
+                            String[] errorMsgArr = errorMsg.split("\\s+");//截取errorMsg中出错的字段值
+                            eachQuestionMap.put("errorMsg",errorMsgArr[1]);
+                        }
+                        eachQuestionMap.put("status",status);
+                        eachQuestionMap.put("id",id);
+                        eachQuestionMap.put("paramData",paramData);
+                        eachQuestionMap.put("testcaseID",testcaseID1);
+                        eachQuestionMap.put("recordID",recordID);
+                        eachQuestionMap.put("quoteDetail",quoteDetail);
+                        eachQuestionMap.put("detailType",detailType);
+                        questionList.add(eachQuestionMap);
+                    }
+                }
+            }
         }
-        return questionMap;
+        return questionList;
     }
 
     /**
@@ -378,10 +441,10 @@ public class DocumentService {
     public List<Map<String,Object>> getTestReport(JSONArray filters,String collectionName){
         List<Criteria> criteriaList = new ArrayList<>();
         List<Map<String,Object>> reportList =  new ArrayList<Map<String,Object>>();//返回的总List
-        List<Map<String,Object>> bugList =  new ArrayList<Map<String,Object>>();//缺陷列表
         Map<String,Object> reportMap =new HashMap<String,Object>();
-        Set methodsAllSet = new HashSet();//将方法放入set集合进行自动去重，计数，用于计算覆盖率，通过率
-        Set methodsErrorSet = new HashSet();
+        JSONObject interfaceMap = new JSONObject();//有错误的接口及接口中错误用例数
+        JSONObject testcaseMap = new JSONObject();//已确认bug的用例参数
+        JSONArray methodArray = new JSONArray();//有错误的方法名数组
         /*---------------------查询对比结果集合-------------------------*/
         for(int i=0;i<filters.size();i++){
             JSONObject filterFactor = filters.getJSONObject(i);
@@ -390,138 +453,39 @@ public class DocumentService {
             criteriaList.add(criteria);
         }
         List<ResultDocument> list = documentRepository.findResultDocumentsByCriterias(criteriaList,collectionName);
-        JSONArray mismatchArray = new JSONArray();
-        JSONArray errorArray = new JSONArray();
-        JSONArray emptyArray = new JSONArray();
-        JSONArray comparedFalseArray = new JSONArray();
-        JSONArray comparedTrueArray = new JSONArray();
         String planID = "";
         if(list!=null && !list.isEmpty()){
-            mismatchArray = list.get(0).getMismatch();
-            errorArray = list.get(0).getError();
-            emptyArray = list.get(0).getEmpty();
-            comparedFalseArray = list.get(0).getResult().getJSONArray("false");//compared中为false的数组
-            comparedTrueArray = list.get(0).getResult().getJSONArray("true");//compared中为false的数组
+            JSONArray mismatchArray = list.get(0).getMismatch();
+            JSONArray errorArray = list.get(0).getError();
+            JSONArray emptyArray = list.get(0).getEmpty();
+            JSONArray resultFalseArray = list.get(0).getResult().getJSONArray("false");//result中为false的数组
+            JSONArray resultArray = new JSONArray();
+            resultArray.add(mismatchArray);
+            resultArray.add(errorArray);
+            resultArray.add(emptyArray);
+            resultArray.add(resultFalseArray);
+            if(list.get(0).getResult().size()>2){//则为排序类型结果
+                JSONArray resultSort1FalseArray = list.get(0).getResult().getJSONObject("sort1").getJSONArray("fasle");//result中sort1中的false数组
+                JSONArray resultSort1UnknownArray = list.get(0).getResult().getJSONObject("sort1").getJSONArray("unknown");//result中sort1中的unknown数组
+                JSONArray resultSort2FalseArray = list.get(0).getResult().getJSONObject("sort2").getJSONArray("fasle");//result中sort2中的false数组
+                JSONArray resultSort2UnknownArray = list.get(0).getResult().getJSONObject("sort2").getJSONArray("unknown");//result中sort2中的unknown数组
+                resultArray.add(resultSort1FalseArray);
+                resultArray.add(resultSort1UnknownArray);
+                resultArray.add(resultSort2FalseArray);
+                resultArray.add(resultSort2UnknownArray);
+            }
             String id = list.get(0).get_id();
+            String quoteDetail = list.get(0).getQuoteDetail();//0基准1行情  排序待定
             planID = list.get(0).getPlanID();//计划ID
-            List<Map<String,Object>> questionList =  new ArrayList<Map<String,Object>>();
-            String paramStr;//用例参数
-            String testcaseID1;//方法名
-            String status;//状态：默认0，确认1，忽略2
-            String bugDescribe;//bug描述
-            Map<String, String> interfaceMap = new HashMap<String, String>();
-            if(!comparedFalseArray.isEmpty()&&comparedFalseArray.size()!=0){
-                for(int i=0;i<comparedFalseArray.size();i++){
-                    Map<String,Object> questionMap =new HashMap<String,Object>();
-                    paramStr = comparedFalseArray.getJSONObject(i).getString("paramData1");
-                    testcaseID1 = comparedFalseArray.getJSONObject(i).getString("testcaseID1");
-                    bugDescribe = comparedFalseArray.getJSONObject(i).getString("bugDescribe");
-                    status = comparedFalseArray.getJSONObject(i).getString("status");
-                    methodsAllSet.add(testcaseID1);//将方法名加入set，实现去重
-                    methodsErrorSet.add(testcaseID1);
-                    String interfaceName = testcaseID1.substring(0,testcaseID1.lastIndexOf("_"));//根据方法名截取接口名
-                    if(interfaceMap.containsKey(interfaceName)){//遍历判断所有的接口名，已经存在就加1，不存在就给初始值1
-                        int val = (Integer.parseInt(interfaceMap.get(interfaceName))+1);
-                        interfaceMap.put(interfaceName, val+"");
-                    }else{
-                        interfaceMap.put(interfaceName, "1");
-                    }
-                    if(("1").equals(status)){
-                        questionMap.put("paramStr",paramStr);
-                        questionMap.put("testcaseID",testcaseID1);
-                        questionMap.put("bugDescribe",bugDescribe);
-                        bugList.add(questionMap);
-                    }else{
-                        continue;
-                    }
-                }
-            }
-            if(!mismatchArray.isEmpty()&&mismatchArray.size()!=0){
-                for(int i=0;i<mismatchArray.size();i++){
-                    Map<String,Object> questionMap2 =new HashMap<String,Object>();
-                    paramStr = mismatchArray.getJSONObject(i).getString("paramData");
-                    testcaseID1 = mismatchArray.getJSONObject(i).getString("testcaseID");
-                    bugDescribe = mismatchArray.getJSONObject(i).getString("bugDescribe");
-                    status = mismatchArray.getJSONObject(i).getString("status");
-                    methodsAllSet.add(testcaseID1);//将方法名加入set，实现去重
-                    methodsErrorSet.add(testcaseID1);
-                    String interfaceName = testcaseID1.substring(0,testcaseID1.lastIndexOf("_"));//根据方法名截取接口名
-                    if(interfaceMap.containsKey(interfaceName)){//遍历判断所有的接口名，已经存在就加1，不存在就给初始值1
-                        int val = (Integer.parseInt(interfaceMap.get(interfaceName))+1);
-                        interfaceMap.put(interfaceName, val+"");
-                    }else{
-                        interfaceMap.put(interfaceName, "1");
-                    }
-                    if(("1").equals(status)){
-                        questionMap2.put("paramStr",paramStr);
-                        questionMap2.put("testcaseID",testcaseID1);
-                        questionMap2.put("bugDescribe",bugDescribe);
-                        bugList.add(questionMap2);
-                    }else{
-                        continue;
-                    }
-                }
-            }
-            if(!errorArray.isEmpty()&&errorArray.size()!=0){
-                for(int i=0;i<errorArray.size();i++){
-                    Map<String,Object> questionMap3 =new HashMap<String,Object>();
-                    paramStr = errorArray.getJSONObject(i).getString("paramData");
-                    testcaseID1 = errorArray.getJSONObject(i).getString("testcaseID");
-                    bugDescribe = errorArray.getJSONObject(i).getString("bugDescribe");
-                    status = errorArray.getJSONObject(i).getString("status");
-                    methodsAllSet.add(testcaseID1);//将方法名加入set，实现去重
-                    methodsErrorSet.add(testcaseID1);
-                    String interfaceName = testcaseID1.substring(0,testcaseID1.lastIndexOf("_"));//根据方法名截取接口名
-                    if(interfaceMap.containsKey(interfaceName)){//遍历判断所有的接口名，已经存在就加1，不存在就给初始值1
-                        int val = (Integer.parseInt(interfaceMap.get(interfaceName))+1);
-                        interfaceMap.put(interfaceName, val+"");
-                    }else{
-                        interfaceMap.put(interfaceName, "1");
-                    }
-                    if(("1").equals(status)){
-                        questionMap3.put("paramStr",paramStr);
-                        questionMap3.put("testcaseID",testcaseID1);
-                        questionMap3.put("bugDescribe",bugDescribe);
-                        bugList.add(questionMap3);
-                    }else{
-                        continue;
-                    }
-                }
-            }
-            if(!emptyArray.isEmpty()&&emptyArray.size()!=0){
-                for(int i=0;i<emptyArray.size();i++){
-                    Map<String,Object> questionMap4 =new HashMap<String,Object>();
-                    paramStr = emptyArray.getJSONObject(i).getString("paramData");
-                    testcaseID1 = emptyArray.getJSONObject(i).getString("testcaseID");
-                    bugDescribe = emptyArray.getJSONObject(i).getString("bugDescribe");
-                    status = emptyArray.getJSONObject(i).getString("status");
-                    methodsAllSet.add(testcaseID1);//将方法名加入set，实现去重
-                    methodsErrorSet.add(testcaseID1);
-                    String interfaceName = testcaseID1.substring(0,testcaseID1.lastIndexOf("_"));//根据方法名截取接口名
-                    if(interfaceMap.containsKey(interfaceName)){//遍历判断所有的接口名，已经存在就加1，不存在就给初始值1
-                        int val = (Integer.parseInt(interfaceMap.get(interfaceName))+1);
-                        interfaceMap.put(interfaceName, val+"");
-                    }else{
-                        interfaceMap.put(interfaceName, "1");
-                    }
-                    if(("1").equals(status)){
-                        questionMap4.put("paramStr",paramStr);
-                        questionMap4.put("testcaseID",testcaseID1);
-                        questionMap4.put("bugDescribe",bugDescribe);
-                        bugList.add(questionMap4);
-                    }else{
-                        continue;
-                    }
-                }
-            }
-            if(!comparedTrueArray.isEmpty()&&comparedTrueArray.size()!=0){
-                for(int i=0;i<comparedTrueArray.size();i++){
-                    testcaseID1 = comparedTrueArray.getJSONObject(i).getString("testcaseID1");
-                    methodsAllSet.add(testcaseID1);//将方法名加入set，实现去重
-                }
-            }
+            //行情，基准的报告信息查询方法
+            JSONObject reportInfo = getReportInfo(resultArray,quoteDetail);
+            Set methodSetFromInfo = new HashSet(Arrays.asList(reportInfo.getJSONArray("methodSet")));
+            methodArray = JSONArray.parseArray(methodSetFromInfo.iterator().next().toString());//错误的方法名数组
+            JSONArray bugList = reportInfo.getJSONArray("bugList");//缺陷列表
+            interfaceMap = reportInfo.getJSONObject("interfaceMap");
+            testcaseMap = reportInfo.getJSONObject("testcaseMap");//已确认bug的错误用例map
             reportMap.put("bugList",bugList);//将缺陷列表放入结果map中
-            reportMap.put("interfaceErrorMap",interfaceMap);//将接口错误用例数放入结果map中-------柱状图
+            reportMap.put("interfaceErrorMap",interfaceMap);//将接口已确认错误用例数放入结果map中-------柱状图
         }
         /*---------------------查询计划集合-------------------------*/
         List<Criteria> criteriaList2 = new ArrayList<>();
@@ -545,13 +509,23 @@ public class DocumentService {
             String startTime = data.getString("start_time");
             String runTimes = data.getString("run_times");
             JSONArray methods = data.getJSONArray("methods");
+            int planTestcases = 0;//计划所传的用例总数
+            Set planInterfacesSet = new HashSet();
+            Set planMethodsSet = new HashSet();
+            for(int i=0;i<methods.size();i++){
+                String methodName = methods.getJSONObject(i).getString("method_name");
+                planMethodsSet.add(methodName);
+                String interfaceName = methodName.substring(0,methodName.lastIndexOf("_"));//根据方法名截取接口名
+                planInterfacesSet.add(interfaceName);
+                planTestcases += methods.getJSONObject(i).getJSONArray("testcases").size();
+            }
             reportMap.put("planName",planName);
             reportMap.put("planType",planType);
             reportMap.put("environment",environment);
             reportMap.put("startTime",startTime);
             reportMap.put("sdkVersion",sdkVersion);
             reportMap.put("runTimes",runTimes);
-            /*---------------------统计图数据查询-------------------------*/
+            /*---------------------版本信息集合查询，统计图数据计算-------------------------*/
             //查询计算本次版本下的方法数和用例数
             List<Criteria> criteriaList3 = new ArrayList<>();
             Criteria criteria = Criteria.where(("data.sdk_version")).is(sdkVersion);
@@ -573,36 +547,120 @@ public class DocumentService {
                     }
                 }
             }
-            //方法覆盖率：  本次计划总方法数/本版本总方法数
-            int thisMethods = methodsAllSet.toArray().length;
+            //本次计划执行用例数，方法数，接口数，全部从计划集合中得到而不是从结果集合
+            //接口覆盖率  本次接口总数/本版本接口总数----------------
+            int thisInterfaces = planInterfacesSet.toArray().length;
+            JSONArray interfaceCoverRate = new JSONArray();
+            interfaceCoverRate.add(thisInterfaces);
+            interfaceCoverRate.add(interfacesList.size());//版本下接口数
+            reportMap.put("interfaceCoverRate",interfaceCoverRate);
+            //接口通过率 （本次接口总数-出错接口数）/本次接口总数
+            int interfacesNotPass = interfaceMap.size();//先算错误未通过的个数
+            int interfacesPass = thisInterfaces - interfacesNotPass;//通过的方法个数
+            JSONArray interfacePassRate = new JSONArray();
+            interfacePassRate.add(interfacesPass);
+            interfacePassRate.add(thisInterfaces);
+            reportMap.put("interfacePassRate",interfacePassRate);
+            //方法覆盖率：  本次计划总方法数/本版本总方法数--------------------
+            int thisMethods = planMethodsSet.toArray().length;
             JSONArray methodCoverRate = new JSONArray();
             methodCoverRate.add(thisMethods);
             methodCoverRate.add(versionMethods);
             reportMap.put("methodCoverRate",methodCoverRate);//方法覆盖率
-            //方法通过率：  1-本次计划方法错误数/本次计划总方法数
-            int methodsNotPass = methodsErrorSet.toArray().length;//先算错误未通过的个数
+            //方法通过率：  （本次计划总方法数-本次计划方法错误数）/本次计划总方法数
+            int methodsNotPass = methodArray.size();//先算错误未通过的个数
             int methodPass = thisMethods - methodsNotPass;//通过的方法个数
             JSONArray methodPassRate = new JSONArray();
             methodPassRate.add(methodPass);
             methodPassRate.add(thisMethods);
             reportMap.put("methodPassRate",methodPassRate);
-            //用例覆盖率  本次计划用例个数/本版本总用例数
-            int thisTestcases = comparedFalseArray.size()+comparedTrueArray.size()+emptyArray.size()+mismatchArray.size()+errorArray.size();//本次计划总用例数
+            //用例覆盖率  本次计划用例个数/本版本总用例数---------------------
+            //int thisTestcases = ((comparedFalseArray.size()+comparedTrueArray.size())*2+emptyArray.size()+mismatchArray.size()+errorArray.size())/2;//本次计划总用例数
             JSONArray testcaseCoverRate = new JSONArray();
-            testcaseCoverRate.add(thisTestcases);
+            testcaseCoverRate.add(planTestcases);
             testcaseCoverRate.add(versionTestcases);
             reportMap.put("testcaseCoverRate",testcaseCoverRate);
-            //用例通过率  本次计划用例正确数/本次使用总用例数
-            int thisTestcasePass = comparedTrueArray.size();
+            //用例通过率  （本次计划总用例数-本次计划用例错误数）/本次计划使用总用例数
+            int testcaseNotPass = testcaseMap.size();
+            int testcasePass = planTestcases - testcaseNotPass;
             JSONArray testcasePassRate = new JSONArray();
-            testcasePassRate.add(thisTestcasePass);
-            testcasePassRate.add(thisTestcases);
+            testcasePassRate.add(testcasePass);
+            testcasePassRate.add(planTestcases);
             reportMap.put("testcasePassRate",testcasePassRate);
-            //各接口错误用例数  柱状图--------查询对比结果中已计算  interfaceMap
+            //各接口已确认错误用例数  柱状图--------查询对比结果中已计算  interfaceMap
         }
         //将map放入一个list中，可能业务扩展需求
         reportList.add(reportMap);
         return reportList;
+    }
+
+    /**
+     * //行情，基准的报告信息查询方法
+     * @param resultArray
+     * @param quoteDetail
+     * @return
+     */
+    public JSONObject getReportInfo(JSONArray resultArray,String quoteDetail){
+        JSONObject reportMapInfo = new JSONObject();
+        String paramData;//用例参数
+        String testcaseID;//方法名
+        String status;//状态：默认0，确认1，忽略2
+        String bugDescribe;//bug描述
+        JSONObject interfaceMap = new JSONObject();//有已确认bug的接口数和已确认的bug数（不重复）
+        JSONObject testcaseMap = new JSONObject();//已确认bug的错误用例（不重复）
+        JSONArray bugList =  new JSONArray();//缺陷列表
+        Set methodSet = new HashSet();
+        for(int i=0;i<resultArray.size();i++){//获取错误类型数组中的一种数组
+            JSONArray eachArray = resultArray.getJSONArray(i);
+            if(eachArray!=null&&eachArray.size()!=0){
+                for(int j=0;j<eachArray.size();j++){//遍历每种错误类型数组
+                    Map<String,Object> questionMap =new HashMap<String,Object>();
+                    if("0".equals(quoteDetail)&&i==3) {//基准比较且为false错误类型
+                        paramData = eachArray.getJSONObject(j).getString("paramData1");
+                        testcaseID = eachArray.getJSONObject(j).getString("testcaseID1");
+                    }else{
+                        testcaseID = eachArray.getJSONObject(j).getString("testcaseID");
+                        paramData = eachArray.getJSONObject(j).getString("paramData");
+                    }
+                    bugDescribe = eachArray.getJSONObject(j).getString("bugDescribe");
+                    status = eachArray.getJSONObject(j).getString("status");
+                    //将paramData转换为有序字符串，用于接下来的比对
+                    String paramDataStr = JSONObject.toJSONString(paramData, SerializerFeature.SortField.MapSortField);
+                    String interfaceName = testcaseID.substring(0,testcaseID.lastIndexOf("_"));//根据方法名截取接口名
+                    if(("1").equals(status)){//只有确认了bug的方法和接口才算入错误个数
+                        /**
+                         *1.判断用例是否出现在用例JSONObject的key中，存在就忽略，不需要计入用例方法接口数。不存在就将其
+                         * 放入用例JSONObject中。
+                         * 2.只有用例未出现过，计算它的方法接口数才有意义，反之则无需计算
+                         * 3.第二步在未出现的用例判断体内将该用例方法名放入Set集合去重，计数
+                         * 4.第三步在未出现的用例判断体内将该用例出现次数和接口名存入接口map
+                         */
+                        if(!testcaseMap.containsKey(paramDataStr)){
+                            testcaseMap.put(paramDataStr,"1");
+                            methodSet.add(testcaseID);
+                            if(interfaceMap.containsKey(interfaceName)){//遍历判断所有的接口名，已经存在就加1，不存在就给初始值1
+                                int val = (Integer.parseInt(interfaceMap.get(interfaceName).toString())+1);
+                                interfaceMap.put(interfaceName, val+"");
+                            }else{
+                                interfaceMap.put(interfaceName, "1");
+                            }
+                        }
+                        questionMap.put("paramStr",paramData);
+                        questionMap.put("testcaseID",testcaseID);
+                        questionMap.put("bugDescribe",bugDescribe);
+                        bugList.add(questionMap);
+                    }else{
+                        continue;
+                    }
+
+                }
+            }
+        }
+        reportMapInfo.put("bugList",bugList);
+        reportMapInfo.put("methodSet",methodSet.toArray());
+        reportMapInfo.put("interfaceMap",interfaceMap);
+        reportMapInfo.put("testcaseMap",testcaseMap);
+        return reportMapInfo;
     }
 
     /**
