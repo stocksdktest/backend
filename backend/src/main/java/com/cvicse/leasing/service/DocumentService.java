@@ -265,7 +265,15 @@ public class DocumentService {
             }
             String id = list.get(0).get_id();
             String quoteDetail = list.get(0).getQuoteDetail();//0基准1行情  排序2
-            questionList = getResultInfor(resultArray,id,quoteDetail,detailType);//抽成公共方法，取值放值
+            String runnerID1 = list.get(0).getRunnerID1();//获取runnerID，根据传入顺序确定对应的环境，1就是第一个传入的，2是后面传入的
+            String runnerID2 = list.get(0).getRunnerID2();
+            JSONObject conditions = new JSONObject();
+            conditions.put("id",id);
+            conditions.put("quoteDetail",quoteDetail);
+            conditions.put("detailType",detailType);
+            conditions.put("runnerID1",runnerID1);
+            conditions.put("runnerID2",runnerID2);
+            questionList = getResultInfor(resultArray,conditions);//抽成公共方法，取值放值
         }
         return questionList;
     }
@@ -273,14 +281,17 @@ public class DocumentService {
     /**
      * 多种比对类型信息查询过滤方法
      * @param resultArray
-     * @param id
-     * @param quoteDetail 0 基准  1行情
+     * @param conditions
      * @return
      */
-    public JSONArray getResultInfor(JSONArray resultArray,String id,String quoteDetail,JSONArray detailType){
+    public JSONArray getResultInfor(JSONArray resultArray,JSONObject conditions){
         JSONArray questionList = new JSONArray();
+        String id = conditions.getString("id");
+        String quoteDetail = conditions.getString("quoteDetail");//比对类型 0基准 1行情 2排序
+        JSONArray detailType = conditions.getJSONArray("detailType");//两边环境标志
+        String runnerID1 = conditions.getString("runnerID1");//用于判断error，empty，mismatch错误中出错环境信息
+        String runnerID2 = conditions.getString("runnerID2");//1,2按照计划传入顺序决定
         JSONObject paramData;//用例参数
-        String quoteParamData;//用例参数  还是string没有改成统一JSON格式
         String testcaseID1;//方法名
         JSONArray details;//详细信息
         String recordID;//recordID，后续更新状态需要
@@ -294,6 +305,7 @@ public class DocumentService {
         JSONArray result;//每个用例中的详细信息
         String dateTime;//行情执行的时间
         String errorMsg = "";//排序每个用例报错信息
+        String runnerID = "";//用例出错信息中的runnerID，标志环境信息
         if("0".equals(quoteDetail)){//基准比较的值查询
             for(int i=0;i<resultArray.size();i++){//获取错误类型数组中的一个，数组
                 JSONArray eachArray = resultArray.getJSONArray(i);
@@ -304,6 +316,14 @@ public class DocumentService {
                         testcaseID1 = eachArray.getJSONObject(j).getString("testcaseID");
                         recordID = eachArray.getJSONObject(j).getString("recordID");
                         status = eachArray.getJSONObject(j).getString("status");
+                        if(i!=3){
+                            runnerID = eachArray.getJSONObject(j).getString("runnerID");
+                            if(runnerID.equals(runnerID1)){
+                                eachQuestionMap.put("environment",detailType.getString(0));
+                            }else{
+                                eachQuestionMap.put("environment",detailType.getString(1));
+                            }
+                        }
                         if(i==0){
                             eachQuestionMap.put("type","mismatch");
                         }else if(i==1){
@@ -336,7 +356,7 @@ public class DocumentService {
                     for(int j=0;j<eachArray.size();j++){
                         JSONObject eachQuestionMap =new JSONObject();
                         JSONArray questionDetails = new JSONArray();//存所有details和datetime的数组
-                        quoteParamData = eachArray.getJSONObject(j).getString("paramData");
+                        paramData = eachArray.getJSONObject(j).getJSONObject("paramData");
                         testcaseID1 = eachArray.getJSONObject(j).getString("testcaseID");
                         recordID = eachArray.getJSONObject(j).getString("recordID");
                         status = eachArray.getJSONObject(j).getString("status");
@@ -363,9 +383,17 @@ public class DocumentService {
                         }else{
                             eachQuestionMap.put("type","false");
                         }
+                        if(i!=3){
+                            runnerID = eachArray.getJSONObject(j).getString("runnerID");
+                            if(runnerID.equals(runnerID1)){
+                                eachQuestionMap.put("environment",detailType.getString(0));
+                            }else{
+                                eachQuestionMap.put("environment",detailType.getString(1));
+                            }
+                        }
                         eachQuestionMap.put("id",id);
                         eachQuestionMap.put("quoteDetail",quoteDetail);
-                        eachQuestionMap.put("paramData",quoteParamData);
+                        eachQuestionMap.put("paramData",paramData);
                         eachQuestionMap.put("testcaseID",testcaseID1);
                         eachQuestionMap.put("recordID",recordID);
                         eachQuestionMap.put("status",status);
@@ -411,6 +439,14 @@ public class DocumentService {
                             eachQuestionMap.put("type","sort1_false");
                         }else{
                             eachQuestionMap.put("type","sort2_false");
+                        }
+                        if(i<3){
+                            runnerID = eachArray.getJSONObject(j).getString("runnerID");
+                            if(runnerID.equals(runnerID1)){
+                                eachQuestionMap.put("environment",detailType.getString(0));
+                            }else{
+                                eachQuestionMap.put("environment",detailType.getString(1));
+                            }
                         }
                         errorMsg = eachArray.getJSONObject(j).getString("error_msg");
                         if(!"".equals(errorMsg)&&errorMsg!=null){

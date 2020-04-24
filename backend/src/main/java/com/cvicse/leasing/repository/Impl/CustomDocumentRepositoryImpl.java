@@ -66,7 +66,9 @@ public class CustomDocumentRepositoryImpl implements CustomDocumentRepository {
         //query.addCriteria(criteria4);
         //query.addCriteria(Criteria.where("status").is(Status.Created));
         //query.addCriteria(Criteria.where("data.time_stamp").ne("").ne(null));
-        return mongoTemplate.find(query,ResultDocument.class,collectionName);
+        List<ResultDocument> list = mongoTemplate.find(query,ResultDocument.class,collectionName);
+        Collections.reverse(list);//list元素倒序
+        return list;
     }
 
     @Override
