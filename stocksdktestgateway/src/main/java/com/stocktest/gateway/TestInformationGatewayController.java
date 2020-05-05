@@ -46,6 +46,23 @@ public class TestInformationGatewayController {
         return response.getBody();
     }
 
+    /**
+     * 前台传回两个版本名，根据版本名查询比较得出相同用例
+     * @param twoVersion  两个版本信息
+     * @return
+     */
+    @PostMapping("/sameTestcases")
+    public JSONArray getSameTestcase(@RequestBody JSONArray twoVersion){
+        RestTemplate restTemplate = new RestTemplate();
+        String uri = rehost + "/api/sameTestcases/?collectionName={collectionName}&twoVersion={twoVersion}";
+        Map<String, Object> params = new HashMap<>();
+        params.put("collectionName", "testInformation");
+        params.put("twoVersion",twoVersion.toString());
+        ResponseEntity<JSONArray> response = restTemplate.getForEntity(uri, JSONArray.class,params);
+        logger.info(response.getBody().toString());
+        return response.getBody();
+    }
+
     @PostMapping()
     public JSONArray getTestInformation(
             @RequestBody(required = false) JSONArray
@@ -60,6 +77,25 @@ public class TestInformationGatewayController {
             params.put("filterFactors",filterFactors.toString());
         }
         ResponseEntity<JSONArray> response = restTemplate.getForEntity(uri,JSONArray.class,params);
+        logger.info(response.getBody().toString());
+        return response.getBody();
+    }
+
+    @PostMapping("/testcases/{id}")
+    public JSONObject getTestCases(@PathVariable String id,
+            @RequestBody(required = false) JSONArray filterFactors){
+        RestTemplate restTemplate = new RestTemplate();
+        Map<String, Object> params = new HashMap<>();
+        params.put("id",id);
+        params.put("collectionName", "testInformation");
+        String uri;
+        if(filterFactors==null){
+            uri = rehost + "/api/documents/?collectionName={collectionName}";
+        }else{
+            uri = rehost + "/api/documents/{id}?collectionName={collectionName}&filterFactors={filterFactors}";
+            params.put("filterFactors",filterFactors.toString());
+        }
+        ResponseEntity<JSONObject> response = restTemplate.getForEntity(uri,JSONObject.class,params);
         logger.info(response.getBody().toString());
         return response.getBody();
     }

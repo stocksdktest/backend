@@ -21,16 +21,12 @@ import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.aggregation.LookupOperation;
 import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.CriteriaDefinition;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-//import com.mongodb.QueryBuilder;
-import java.math.BigDecimal;
 import java.util.*;
 
-import static java.util.Spliterators.iterator;
 
 @Service
 public class DocumentService {
@@ -158,6 +154,16 @@ public class DocumentService {
     }
 
     /**
+     * 查询测试报告中可以展示测试报告（reprotFlag为1）的计划
+     * @param collectionName
+     * @return
+     */
+    public List<ResultDocument> findTestReportList(String collectionName){
+        logger.info("get all documents by collectionName.");
+        return documentRepository.findTestReportList(collectionName);
+    }
+
+    /**
      * 根据id和collection获取某个具体的Document
      * @param id
      * @param collectionName
@@ -224,6 +230,62 @@ public class DocumentService {
             criteriaList.add(criteria);
         }
         return documentRepository.findDocumentsByCriterias(criteriaList,collectionName);
+    }
+
+    /**
+     * 传入两个版本名，查询对应版本下用例，比较得到相同用例
+     * @param filters
+     * @param collectionName
+     * @return
+     */
+    public JSONArray getSameTestcasesByVersion(JSONArray filters,String collectionName){
+        List<Criteria> criteriaList = new ArrayList<>();
+        criteriaList.add(Criteria.where("data.sdk_version").is(filters.getString(0)));//查询第一个版本信息
+        List<Document> version1 = documentRepository.findDocumentsByCriterias(criteriaList,collectionName);
+        JSONArray interfaces1 = version1.get(0).getData().getJSONArray("interfaces");
+        JSONArray methods1 = new JSONArray();
+        JSONArray testcase1 = new JSONArray();
+        for (int i = 0; i < interfaces1.size(); i++) {
+             methods1.addAll(interfaces1.getJSONObject(i).getJSONArray("methods"));
+        }
+        for (int j = 0; j < methods1.size(); j++) {
+            testcase1.addAll(methods1.getJSONObject(j).getJSONArray("testcases"));
+        }
+        criteriaList.remove(0);//移除第一个条件
+        criteriaList.add(Criteria.where("data.sdk_version").is(filters.getString(1)));//查询第二个版本信息
+        List<Document> version2 = documentRepository.findDocumentsByCriterias(criteriaList,collectionName);
+        JSONArray interfaces2 = version2.get(0).getData().getJSONArray("interfaces");
+        JSONArray methods2 = new JSONArray();
+        JSONArray testcase2 = new JSONArray();
+        for (int i = 0; i < interfaces2.size(); i++) {
+            methods2.addAll(interfaces2.getJSONObject(i).getJSONArray("methods"));
+        }
+        for (int j = 0; j < methods2.size(); j++) {
+            testcase2.addAll(methods2.getJSONObject(j).getJSONArray("testcases"));
+        }
+        testcase1.retainAll(testcase2);//用例的去重<<--------------------------------------------------
+        JSONArray returnMethods = new JSONArray();
+        String methodsName;
+        boolean flag = true;//标志，方法名是否已存在。true：不存在
+        for (int k = 0; k < testcase1.size(); k++) {
+            methodsName = testcase1.getJSONObject(k).getString("case_name").split("-")[0];
+            for (int i = 0; i < returnMethods.size(); i++) {//遍历方法数组，判断方法名是否存在
+                String returnMethodName = returnMethods.getJSONObject(i).getString("method_name");
+                if(methodsName.equals(returnMethodName)){//如果有同名方法，就把当前用例放到该方法的用例数组里
+                    returnMethods.getJSONObject(i).getJSONArray("testcases").add(testcase1.getJSONObject(k));
+                    flag = false;
+                }
+            }
+            if(flag){////如果没有同名方法，则新增一个方法数组元素并且将方法名和用例数组放入
+                JSONObject newMethod = new JSONObject();
+                newMethod.put("method_name",methodsName);
+                JSONArray testcaseArray = new JSONArray();
+                testcaseArray.add(testcase1.getJSONObject(k));
+                newMethod.put("testcases",testcaseArray);
+                returnMethods.add(newMethod);
+            }
+        }
+        return returnMethods;
     }
 
     /**
@@ -631,14 +693,14 @@ public class DocumentService {
     }
 
     /**
-     * //行情，基准的报告信息查询方法
+     * //行情，基准，排序的报告信息查询方法
      * @param resultArray
      * @param quoteDetail
      * @return
      */
     public JSONObject getReportInfo(JSONArray resultArray,String quoteDetail){
         JSONObject reportMapInfo = new JSONObject();
-        String paramData;//用例参数
+        JSONObject paramData;//用例参数
         String testcaseID;//方法名
         String status;//状态：默认0，确认1，忽略2
         String bugDescribe;//bug描述
@@ -652,11 +714,11 @@ public class DocumentService {
                 for(int j=0;j<eachArray.size();j++){//遍历每种错误类型数组
                     Map<String,Object> questionMap =new HashMap<String,Object>();
                     if("0".equals(quoteDetail)&&i==3) {//基准比较且为false错误类型
-                        paramData = eachArray.getJSONObject(j).getString("paramData1");
+                        paramData = eachArray.getJSONObject(j).getJSONObject("paramData1");
                         testcaseID = eachArray.getJSONObject(j).getString("testcaseID1");
                     }else{
                         testcaseID = eachArray.getJSONObject(j).getString("testcaseID");
-                        paramData = eachArray.getJSONObject(j).getString("paramData");
+                        paramData = eachArray.getJSONObject(j).getJSONObject("paramData");
                     }
                     bugDescribe = eachArray.getJSONObject(j).getString("bugDescribe");
                     status = eachArray.getJSONObject(j).getString("status");

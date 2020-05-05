@@ -72,6 +72,16 @@ public class CustomDocumentRepositoryImpl implements CustomDocumentRepository {
     }
 
     @Override
+    public List<ResultDocument> findTestReportList(String collectionName){
+        logger.info("get all documents by collectionName in CustomDocumentRepositoryImpl "+collectionName);
+        Query query = new Query();
+        query.addCriteria(Criteria.where("reportFlag").is("1"));
+        List<ResultDocument> list = mongoTemplate.find(query,ResultDocument.class,collectionName);
+        Collections.reverse(list);//list元素倒序
+        return list;
+    }
+
+    @Override
     public  Document findDocumentByIdInCollection(String id,String collectionName)throws NullPointerException{
         return this.mongoTemplate.findOne(new Query(Criteria.where("_id").is(id)),Document.class,collectionName);
     }

@@ -17,6 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import com.google.gson.Gson;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -100,6 +102,22 @@ public class DocumentController {
         return this.documentService.getTestReport(filters, collectionName);
     }
 
+    /**
+     *  前台传回两个版本名，根据版本名查询比较得出相同用例
+     * @param collectionName
+     * @param twoVersion
+     * @return 两个版本相同的用例
+     */
+    @GetMapping("/sameTestcases")
+    public JSONArray getSameTestcases(
+            @RequestParam(value = "collectionName", defaultValue = "null") String collectionName
+            , @RequestParam(value = "twoVersion") String twoVersion) {
+        logger.info(twoVersion);
+        logger.info("get specialDocumentList by twoVersion " + twoVersion);
+        JSONArray filters = JSONArray.parseArray(twoVersion);
+        return this.documentService.getSameTestcasesByVersion(filters, collectionName);
+    }
+
     @GetMapping("/documents")
 //    @AuthModel(targetModel = Document.class, actionType = {ActionType.QUERY})
     public List<Document> getDocuments(
@@ -124,9 +142,15 @@ public class DocumentController {
      */
     @GetMapping("/questionplan")
     public List<ResultDocument> findQuestionCollection(
-            @RequestParam(value = "collectionName", defaultValue = "null") String collectionName) {
+            @RequestParam(value = "collectionName", defaultValue = "null") String collectionName,
+            @RequestParam(value = "reprotFlag", defaultValue = "0") String reprotFlag) {
             logger.info("get all documents by collectionName " + collectionName);
-            List<ResultDocument> list = this.documentService.findQuestionCollection(collectionName);
+        List<ResultDocument> list = new ArrayList<>();
+            if("1".equals(reprotFlag)){//测试报告下拉选只查询reportFlag为1，可以展示测试报告的计划
+                list = this.documentService.findTestReportList(collectionName);
+            }else{
+                list = this.documentService.findQuestionCollection(collectionName);
+            }
             return list;
     }
 
@@ -202,7 +226,7 @@ public class DocumentController {
                 return returnValue;
             }
         }else{//false更新非内嵌文档的具体字段
-            if (documentService.updateEmbeddedDocument(id, collectionName, params)){
+            if (documentService.updateNotEmbeddedDocument(id, collectionName, params)){
                 returnValue.put("statusFlag","true");
                 return returnValue;
             } else {

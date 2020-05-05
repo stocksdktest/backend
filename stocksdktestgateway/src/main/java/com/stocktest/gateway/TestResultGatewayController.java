@@ -56,11 +56,14 @@ public class TestResultGatewayController {
      * @return
      */
     @PostMapping("/questionPlan")
-    public JSONArray getQuestionPlanInformation(){ RestTemplate restTemplate = new RestTemplate();
+    public JSONArray getQuestionPlanInformation(
+            @RequestParam(value = "reportFlag",defaultValue = "0") String reprotFlag){
+        RestTemplate restTemplate = new RestTemplate();
         Map<String, Object> params = new HashMap<>();
         params.put("collectionName", "testResult");
+        params.put("reprotFlag", reprotFlag);
         String uri;
-        uri = rehost + "/api/questionplan/?collectionName={collectionName}";
+        uri = rehost + "/api/questionplan/?collectionName={collectionName}&reprotFlag={reprotFlag}";
         ResponseEntity<JSONArray> response = restTemplate.getForEntity(uri,JSONArray.class,params);
         logger.info(response.getBody().toString());
         return response.getBody();
@@ -174,6 +177,7 @@ public class TestResultGatewayController {
             result.put("quoteDetail",quoteDetail);
             result.put("detailType",detailType);
             result.put("planID",id);
+            result.put("reportFlag","0");//是否确认忽略所有bug能够查看测试报告的标志 0：未完全确认，不能查看  1：能查看报告
             result.remove("_created");//去除okhttp请求带的多余参数
             result.remove("_updated");
             result.remove("_etag");
@@ -246,7 +250,7 @@ public class TestResultGatewayController {
             , @RequestBody JSONObject params
             , @RequestParam(value = "embeddedDocument",defaultValue = "true") boolean embeddedDocument) {
         RestTemplate restTemplate = new RestTemplate();
-        String uri = rehost + "/api/documents2/{id}?collectionName={collectionName}"; //update方法对应的uri，不用更改
+        String uri = rehost + "/api/documents2/{id}?collectionName={collectionName}&embeddedDocument={embeddedDocument}"; //update方法对应的uri，不用更改
 
         Map<String, String> pathParam = new HashMap<>();
         pathParam.put("id", id);

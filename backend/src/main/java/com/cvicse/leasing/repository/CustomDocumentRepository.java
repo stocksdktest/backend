@@ -23,6 +23,10 @@ public interface CustomDocumentRepository {
 
     //查询问题列表中有返回对比结果的计划集合信息
     List<ResultDocument> findQuestionCollection(String collectionName);
+
+    //查询测试报告中可以展示测试报告（reprotFlag为1）的计划
+    List<ResultDocument> findTestReportList(String collectionName);
+
     //查找所有的collection
     Set<String> findCollections();
 
