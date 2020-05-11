@@ -148,9 +148,9 @@ public class DocumentService {
      * @param collectionName
      * @return
      */
-    public List<ResultDocument> findQuestionCollection(String collectionName){
+    public JSONArray findQuestionCollection(String collectionName){
         logger.info("get all documents by collectionName.");
-        return documentRepository.findQuestionCollection(collectionName);
+        return documentRepository.findDocumentContentByCollection(collectionName);
     }
 
     /**
@@ -158,7 +158,7 @@ public class DocumentService {
      * @param collectionName
      * @return
      */
-    public List<ResultDocument> findTestReportList(String collectionName){
+    public JSONArray findTestReportList(String collectionName){
         logger.info("get all documents by collectionName.");
         return documentRepository.findTestReportList(collectionName);
     }
@@ -305,37 +305,45 @@ public class DocumentService {
         List<ResultDocument> list = documentRepository.findResultDocumentsByCriterias(criteriaList,collectionName);
         JSONArray questionList =  new JSONArray();
         if(list!=null && !list.isEmpty()){
-            JSONArray mismatchArray = list.get(0).getMismatch();
-            JSONArray errorArray = list.get(0).getError();
-            JSONArray emptyArray = list.get(0).getEmpty();
-            JSONArray resultFalseArray = list.get(0).getResult().getJSONArray("false");//result中为false的数组
-            JSONArray resultArray = new JSONArray();
-            resultArray.add(mismatchArray);
-            resultArray.add(errorArray);
-            resultArray.add(emptyArray);
-            resultArray.add(resultFalseArray);
-            JSONArray detailType = list.get(0).getDetailType();//对比环境或者版本的标识;
-            if(list.get(0).getResult().size()>2){//则为排序类型结果
-                JSONArray resultSort1UnknownArray = list.get(0).getResult().getJSONObject("sort1").getJSONArray("unknown");//result中为sort1下为unknown的数组
-                JSONArray resultSort2UnknownArray = list.get(0).getResult().getJSONObject("sort2").getJSONArray("unknown");//result中为sort2下为unknown的数组
-                JSONArray resultSort1FalseArray = list.get(0).getResult().getJSONObject("sort1").getJSONArray("false");//result中为sort1下为false的数组
-                JSONArray resultSort2FalseArray = list.get(0).getResult().getJSONObject("sort2").getJSONArray("false");//result中为sort2下为false的数组
-                resultArray.add(resultSort1UnknownArray);
-                resultArray.add(resultSort2UnknownArray);
-                resultArray.add(resultSort1FalseArray);
-                resultArray.add(resultSort2FalseArray);
+            if(list.get(0).getError_msg()!=null){
+                JSONObject errorMsg = new JSONObject();
+                errorMsg.put("type","DataTooLarge");
+                errorMsg.put("errorMsg",list.get(0).getError_msg());
+                questionList.add(errorMsg);
+            }else{
+                JSONArray mismatchArray = list.get(0).getMismatch();
+                JSONArray errorArray = list.get(0).getError();
+                JSONArray emptyArray = list.get(0).getEmpty();
+                JSONArray resultFalseArray = list.get(0).getResult().getJSONArray("false");//result中为false的数组
+                JSONArray resultArray = new JSONArray();
+                resultArray.add(mismatchArray);
+                resultArray.add(errorArray);
+                resultArray.add(emptyArray);
+                resultArray.add(resultFalseArray);
+                JSONArray detailType = list.get(0).getDetailType();//对比环境或者版本的标识;
+                if(list.get(0).getResult().size()>2){//则为排序类型结果
+                    JSONArray resultSort1UnknownArray = list.get(0).getResult().getJSONObject("sort1").getJSONArray("unknown");//result中为sort1下为unknown的数组
+                    JSONArray resultSort2UnknownArray = list.get(0).getResult().getJSONObject("sort2").getJSONArray("unknown");//result中为sort2下为unknown的数组
+                    JSONArray resultSort1FalseArray = list.get(0).getResult().getJSONObject("sort1").getJSONArray("false");//result中为sort1下为false的数组
+                    JSONArray resultSort2FalseArray = list.get(0).getResult().getJSONObject("sort2").getJSONArray("false");//result中为sort2下为false的数组
+                    resultArray.add(resultSort1UnknownArray);
+                    resultArray.add(resultSort2UnknownArray);
+                    resultArray.add(resultSort1FalseArray);
+                    resultArray.add(resultSort2FalseArray);
+                }
+                String id = list.get(0).get_id();
+                String quoteDetail = list.get(0).getQuoteDetail();//0基准1行情  排序2
+                String runnerID1 = list.get(0).getRunnerID1();//获取runnerID，根据传入顺序确定对应的环境，1就是第一个传入的，2是后面传入的
+                String runnerID2 = list.get(0).getRunnerID2();
+                JSONObject conditions = new JSONObject();
+                conditions.put("id",id);
+                conditions.put("quoteDetail",quoteDetail);
+                conditions.put("detailType",detailType);
+                conditions.put("runnerID1",runnerID1);
+                conditions.put("runnerID2",runnerID2);
+                questionList = getResultInfor(resultArray,conditions);//抽成公共方法，取值放值
             }
-            String id = list.get(0).get_id();
-            String quoteDetail = list.get(0).getQuoteDetail();//0基准1行情  排序2
-            String runnerID1 = list.get(0).getRunnerID1();//获取runnerID，根据传入顺序确定对应的环境，1就是第一个传入的，2是后面传入的
-            String runnerID2 = list.get(0).getRunnerID2();
-            JSONObject conditions = new JSONObject();
-            conditions.put("id",id);
-            conditions.put("quoteDetail",quoteDetail);
-            conditions.put("detailType",detailType);
-            conditions.put("runnerID1",runnerID1);
-            conditions.put("runnerID2",runnerID2);
-            questionList = getResultInfor(resultArray,conditions);//抽成公共方法，取值放值
+
         }
         return questionList;
     }

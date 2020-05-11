@@ -1,5 +1,6 @@
 package com.cvicse.leasing.repository;
 
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 //import com.cvicse.leasing.auth.framwork.auth.QueryModel;
 //import com.cvicse.leasing.auth.framwork.auth.enums.ActionType;
@@ -25,7 +26,7 @@ public interface CustomDocumentRepository {
     List<ResultDocument> findQuestionCollection(String collectionName);
 
     //查询测试报告中可以展示测试报告（reprotFlag为1）的计划
-    List<ResultDocument> findTestReportList(String collectionName);
+    JSONArray findTestReportList(String collectionName);
 
     //查找所有的collection
     Set<String> findCollections();
@@ -34,6 +35,9 @@ public interface CustomDocumentRepository {
 
     //根据collectionName和documentId获取具体的document
     Document findDocumentByIdInCollection(String id,String collectionName);
+
+    // getOneDocumentByIdWithFilter(?)
+    JSONArray findDocumentContentByCollection(String collectionName);
 
     //根据过滤条件查询某个document中的具体的某些内容
     // getOneDocumentByIdWithFilter(?)

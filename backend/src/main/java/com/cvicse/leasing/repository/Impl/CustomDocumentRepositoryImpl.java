@@ -1,22 +1,29 @@
 package com.cvicse.leasing.repository.Impl;
 
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.cvicse.leasing.model.Document;
 import com.cvicse.leasing.model.ResultDocument;
 import com.cvicse.leasing.model.Status;
 import com.cvicse.leasing.repository.CustomDocumentRepository;
 import com.google.common.collect.Lists;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.*;
+import org.springframework.data.mongodb.core.query.BasicQuery;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -72,13 +79,21 @@ public class CustomDocumentRepositoryImpl implements CustomDocumentRepository {
     }
 
     @Override
-    public List<ResultDocument> findTestReportList(String collectionName){
-        logger.info("get all documents by collectionName in CustomDocumentRepositoryImpl "+collectionName);
-        Query query = new Query();
-        query.addCriteria(Criteria.where("reportFlag").is("1"));
-        List<ResultDocument> list = mongoTemplate.find(query,ResultDocument.class,collectionName);
-        Collections.reverse(list);//list元素倒序
-        return list;
+    public JSONArray findTestReportList(String collectionName){
+        DBObject dbObject = new BasicDBObject();//查询条件
+        dbObject.put("reportFlag","1");
+        BasicDBObject fieldsObject=new BasicDBObject();
+        //指定返回的字段
+        fieldsObject.put("planName", true);
+        fieldsObject.put("jobID", true);
+        //置顶返回内嵌文档的某个属性
+/*		fieldsObject.put("bookList.bookCurrencylist.currencyNumber", true);
+		fieldsObject.put("bookList.bookCurrencylist.currencyProperty", true); */
+        Query query = new BasicQuery(dbObject.toString(), fieldsObject.toString());
+        List<ResultDocument> find = this.mongoTemplate.find(query, ResultDocument.class,collectionName);
+        JSONArray array= JSONArray.parseArray(JSON.toJSONString(find));
+        Collections.reverse(array);//list元素倒序
+        return array;
     }
 
     @Override
@@ -162,6 +177,23 @@ public class CustomDocumentRepositoryImpl implements CustomDocumentRepository {
         document.setStatus(Status.Deleted);
         //javers.commit(id,document);
         return mongoTemplate.save(document,document.getCollectionName());
+    }
+
+    @Override
+    public JSONArray findDocumentContentByCollection(String collectionName){
+        DBObject dbObject = new BasicDBObject();//查询条件
+        BasicDBObject fieldsObject=new BasicDBObject();
+        //指定返回的字段
+        fieldsObject.put("planName", true);
+        fieldsObject.put("jobID", true);
+        //置顶返回内嵌文档的某个属性
+/*		fieldsObject.put("bookList.bookCurrencylist.currencyNumber", true);
+		fieldsObject.put("bookList.bookCurrencylist.currencyProperty", true); */
+        Query query = new BasicQuery(dbObject.toString(), fieldsObject.toString());
+        List<ResultDocument> find = this.mongoTemplate.find(query, ResultDocument.class,collectionName);
+        JSONArray array= JSONArray.parseArray(JSON.toJSONString(find));
+        Collections.reverse(array);//list元素倒序
+        return array;
     }
 
     @Override

@@ -141,17 +141,17 @@ public class DocumentController {
      * @return
      */
     @GetMapping("/questionplan")
-    public List<ResultDocument> findQuestionCollection(
+    public JSONArray findQuestionCollection(
             @RequestParam(value = "collectionName", defaultValue = "null") String collectionName,
             @RequestParam(value = "reprotFlag", defaultValue = "0") String reprotFlag) {
             logger.info("get all documents by collectionName " + collectionName);
-        List<ResultDocument> list = new ArrayList<>();
+        JSONArray jsonArray = new JSONArray();
             if("1".equals(reprotFlag)){//测试报告下拉选只查询reportFlag为1，可以展示测试报告的计划
-                list = this.documentService.findTestReportList(collectionName);
+                jsonArray = documentService.findTestReportList(collectionName);
             }else{
-                list = this.documentService.findQuestionCollection(collectionName);
+                jsonArray = documentService.findQuestionCollection(collectionName);
             }
-            return list;
+            return jsonArray;
     }
 
     @GetMapping("/documents/{id}")

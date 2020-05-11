@@ -38,6 +38,8 @@ public class ResultDocument {
 
     private String reportFlag;
 
+    private String error_msg;
+
     public String get_id() {
         return _id;
     }
@@ -150,11 +152,19 @@ public class ResultDocument {
         this.reportFlag = reportFlag;
     }
 
+    public String getError_msg() {
+        return error_msg;
+    }
+
+    public void setError_msg(String error_msg) {
+        this.error_msg = error_msg;
+    }
+
     @Override
     public String toString() {
 //        System.out.println("bug" + JSON.toJSONString(data));
         return String.format(
-                "{_id:'%s', jobID:'%s', dagID:'%s',planName:'%s',runnerID1:'%s',runnerID2:'%s', result:'%s',mismatch:'%s',error:'%s',empty:'%s',quoteDetail:'%s',detailType:'%s',planID:'%s',reportFlag:'%s'}",
-                _id, jobID, dagID,planName,runnerID1,runnerID2, JSON.toJSONString(result), JSON.toJSONString(mismatch), JSON.toJSONString(error), JSON.toJSONString(empty),quoteDetail,JSON.toJSONString(detailType),planID,reportFlag);
+                "{_id:'%s', jobID:'%s', dagID:'%s',planName:'%s',runnerID1:'%s',runnerID2:'%s', result:'%s',mismatch:'%s',error:'%s',empty:'%s',quoteDetail:'%s',detailType:'%s',planID:'%s',reportFlag:'%s',error_msg:'%s'}",
+                _id, jobID, dagID,planName,runnerID1,runnerID2, JSON.toJSONString(result), JSON.toJSONString(mismatch), JSON.toJSONString(error), JSON.toJSONString(empty),quoteDetail,JSON.toJSONString(detailType),planID,reportFlag,error_msg);
     }
 }
