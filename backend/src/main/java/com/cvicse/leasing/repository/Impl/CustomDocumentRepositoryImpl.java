@@ -16,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.annotation.Order;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.BasicQuery;
@@ -23,10 +25,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @RequiredArgsConstructor
 public class CustomDocumentRepositoryImpl implements CustomDocumentRepository {
@@ -48,6 +47,7 @@ public class CustomDocumentRepositoryImpl implements CustomDocumentRepository {
         logger.info("find all collections.");
         return mongoTemplate.getCollectionNames();
     }
+
     @Override
     public List<Document> findAllDocumentsInCollection(String collectionName){
         logger.info("get all documents by collectionName in CustomDocumentRepositoryImpl "+collectionName);
@@ -56,6 +56,42 @@ public class CustomDocumentRepositoryImpl implements CustomDocumentRepository {
         List<Document> list = mongoTemplate.find(query,Document.class,collectionName);
         Collections.reverse(list);//list元素倒序
         return list;
+    }
+
+    @Override
+    public JSONObject findAllDocumentsPagination(String collectionName,JSONObject filters){
+        JSONObject queryField = filters.getJSONObject("queryField");//进行模糊查询的字段
+        Integer pageNumber = filters.getInteger("pageNumber");//页码
+        Integer pageSize = filters.getInteger("pageSize");//页面最大数
+        JSONObject jsonObject = new JSONObject();
+        Query query = new Query();
+        query.addCriteria(Criteria.where("status").is("Created"));
+        Iterator iter = queryField.entrySet().iterator();
+        while (iter.hasNext()) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            String  key = entry.getKey().toString();
+            String value = entry.getValue().toString();
+            if(!"".equals(value)){
+                query.addCriteria(Criteria.where(key).regex(value));
+            }
+        }
+        //查总条数
+        long count=mongoTemplate.count(query,Document.class,collectionName);
+        //query.skip((pageNumber-1)*pageSize);//跳过前几页
+        int intCount = (int)count;//long转int，参与运算
+        int skipNum = intCount-pageNumber*pageSize;
+        if(skipNum<0){
+            pageSize += skipNum;
+            skipNum = 0;
+        }
+        query.skip(skipNum);//跳过前几页
+        query.limit(pageSize);
+        List<Document> list = mongoTemplate.find(query,Document.class,collectionName);
+        Collections.reverse(list);//list元素倒序
+        jsonObject.put("count",count);
+        jsonObject.put("planList",list);
+
+        return jsonObject;
     }
 
     @Override

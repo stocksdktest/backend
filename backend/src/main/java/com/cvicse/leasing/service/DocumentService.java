@@ -133,6 +133,7 @@ public class DocumentService {
         }
         return documentRepository.findEmbeddedDocumentByAggregationOperations(collectionName,operations);
     }
+
     /**
      * 获取某个Collecton下的所有Documents
      * @param collectionName
@@ -141,6 +142,17 @@ public class DocumentService {
     public List<Document> getDocumentsInCollection(String collectionName){
         logger.info("get all documents by collectionName.");
         return documentRepository.findAllDocumentsInCollection(collectionName);
+    }
+
+    /**
+     * 获取某个Collecton下的所有Documents  分页
+     * @param collectionName
+     * @param filters  pageNumber,pageSize,queryFields
+     * @return
+     */
+    public JSONObject getDocumentsPagination(String collectionName,JSONObject filters){
+        logger.info("get all documents by collectionName.");
+        return documentRepository.findAllDocumentsPagination(collectionName,filters);
     }
 
     /**
@@ -245,10 +257,16 @@ public class DocumentService {
         JSONArray interfaces1 = version1.get(0).getData().getJSONArray("interfaces");
         JSONArray methods1 = new JSONArray();
         JSONArray testcase1 = new JSONArray();
-        for (int i = 0; i < interfaces1.size(); i++) {
-             methods1.addAll(interfaces1.getJSONObject(i).getJSONArray("methods"));
+        for (int i = 0; i < interfaces1.size(); i++) {//若接口下无方法或者该方法为空，则跳过，不进行加入操作
+            if(interfaces1.getJSONObject(i).size()<3||interfaces1.getJSONObject(i).getJSONArray("methods")==null){
+                continue;
+            }
+            methods1.addAll(interfaces1.getJSONObject(i).getJSONArray("methods"));
         }
-        for (int j = 0; j < methods1.size(); j++) {
+        for (int j = 0; j < methods1.size(); j++) {//若方法下无用例或者该用例为空，则跳过，不进行加入操作
+            if(methods1.getJSONObject(j).size()<3||methods1.getJSONObject(j).getJSONArray("testcases")==null){
+                continue;
+            }
             testcase1.addAll(methods1.getJSONObject(j).getJSONArray("testcases"));
         }
         criteriaList.remove(0);//移除第一个条件
@@ -258,9 +276,15 @@ public class DocumentService {
         JSONArray methods2 = new JSONArray();
         JSONArray testcase2 = new JSONArray();
         for (int i = 0; i < interfaces2.size(); i++) {
+            if(interfaces2.getJSONObject(i).size()<3||interfaces2.getJSONObject(i).getJSONArray("methods")==null){
+                continue;
+            }
             methods2.addAll(interfaces2.getJSONObject(i).getJSONArray("methods"));
         }
         for (int j = 0; j < methods2.size(); j++) {
+            if(methods2.getJSONObject(j).size()<3||methods2.getJSONObject(j).getJSONArray("testcases")==null){
+                continue;
+            }
             testcase2.addAll(methods2.getJSONObject(j).getJSONArray("testcases"));
         }
         testcase1.retainAll(testcase2);//用例的去重<<--------------------------------------------------
@@ -502,13 +526,17 @@ public class DocumentService {
                             details = eachArray.getJSONObject(j).getJSONArray("details");
                             eachQuestionMap.put("details",details);
                         }else if(i==4){
-                            eachQuestionMap.put("type","sort1_unknown");
+                            eachQuestionMap.put("type","sort1_unknown");//sort1_unknown
+                            eachQuestionMap.put("environment",detailType.getString(0));
                         }else if(i==5){
-                            eachQuestionMap.put("type","sort2_unknown");
+                            eachQuestionMap.put("type","sort2_unknown");//sort2_unknown
+                            eachQuestionMap.put("environment",detailType.getString(1));
                         }else if(i==6){
-                            eachQuestionMap.put("type","sort1_false");
+                            eachQuestionMap.put("type","sort1_false");//sort1_false
+                            eachQuestionMap.put("environment",detailType.getString(0));
                         }else{
-                            eachQuestionMap.put("type","sort2_false");
+                            eachQuestionMap.put("type","sort2_false");//sort2_false
+                            eachQuestionMap.put("environment",detailType.getString(1));
                         }
                         if(i<3){
                             runnerID = eachArray.getJSONObject(j).getString("runnerID");

@@ -20,6 +20,8 @@ public interface CustomDocumentRepository {
      //根据collectionName获取所有document
     //行过滤
 //     @QueryModel(actionType = ActionType.QUERY)
+     JSONObject findAllDocumentsPagination(String collectionName,JSONObject filters);
+
     List<Document> findAllDocumentsInCollection(String collectionName);
 
     //查询问题列表中有返回对比结果的计划集合信息

@@ -10,6 +10,7 @@ import com.cvicse.leasing.model.ResultDocument;
 import com.cvicse.leasing.service.DocumentService;
 //import com.cvicse.leasingauthmanage.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.java.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +18,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import com.google.gson.Gson;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -133,6 +133,21 @@ public class DocumentController {
             JSONArray filters = JSONArray.parseArray(filterFactors);
             return this.documentService.getDocumentsByCriteriaList(filters, collectionName);
         }
+    }
+
+    /**
+     * 获取一个集合中的所有记录-----分页
+     * @param collectionName
+     * @param filterFactors  查询条件，页码，页面最大数
+     * @return
+     */
+    @GetMapping("/documents/pagination")
+    public JSONObject getDocumentPagination(
+            @RequestParam(value = "collectionName", defaultValue = "null") String collectionName
+            , @RequestParam(value = "filterFactors", defaultValue = "[]") String filterFactors) {
+            logger.info("get all documents by collectionName " + collectionName);
+            JSONObject filters = JSONObject.parseObject(filterFactors);
+            return this.documentService.getDocumentsPagination(collectionName,filters);
     }
 
     /**
