@@ -122,6 +122,7 @@ public class CustomDocumentRepositoryImpl implements CustomDocumentRepository {
         //指定返回的字段
         fieldsObject.put("planName", true);
         fieldsObject.put("jobID", true);
+        fieldsObject.put("sdkVersion", true);
         //置顶返回内嵌文档的某个属性
 /*		fieldsObject.put("bookList.bookCurrencylist.currencyNumber", true);
 		fieldsObject.put("bookList.bookCurrencylist.currencyProperty", true); */
@@ -222,6 +223,7 @@ public class CustomDocumentRepositoryImpl implements CustomDocumentRepository {
         //指定返回的字段
         fieldsObject.put("planName", true);
         fieldsObject.put("jobID", true);
+        fieldsObject.put("sdkVersion", true);
         //置顶返回内嵌文档的某个属性
 /*		fieldsObject.put("bookList.bookCurrencylist.currencyNumber", true);
 		fieldsObject.put("bookList.bookCurrencylist.currencyProperty", true); */

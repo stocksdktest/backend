@@ -636,6 +636,8 @@ public class DocumentService {
             String planName = data.getString("plan_name");
             String planType = data.getString("plan_type");
             //环境 0测试 1全真 2生产
+            JSONObject allEnvironment1 = data.getJSONObject("tp_environment1");
+            JSONObject allEnvironment2 = data.getJSONObject("tp_environment2");
             String environment1 = data.getJSONObject("tp_environment1").getString("environment");
             String environment2 = data.getJSONObject("tp_environment2").getString("environment");
             String environment = environment1 +"," +environment2;
@@ -659,6 +661,8 @@ public class DocumentService {
             reportMap.put("startTime",startTime);
             reportMap.put("sdkVersion",sdkVersion);
             reportMap.put("runTimes",runTimes);
+            reportMap.put("allEnvironment1",allEnvironment1);
+            reportMap.put("allEnvironment2",allEnvironment2);
             /*---------------------版本信息集合查询，统计图数据计算-------------------------*/
             //查询计算本次版本下的方法数和用例数
             List<Criteria> criteriaList3 = new ArrayList<>();
@@ -667,6 +671,13 @@ public class DocumentService {
             collectionName = "testInformation";
             List<Document> versionList = documentRepository.findDocumentsByCriterias(criteriaList3,collectionName);
             JSONArray interfacesList = versionList.get(0).getData().getJSONArray("interfaces");
+            if(interfacesList!=null){//测试报告页面后来新增的计划下所有接口的描述
+                Set interfacesDes = new HashSet();
+                for (int i = 0; i < interfacesList.size(); i++) {
+                    interfacesDes.add(interfacesList.getJSONObject(i).getString("interface_name_des"));//接口描述
+                }
+                reportMap.put("interfacesDes",interfacesDes);
+            }
             int versionMethods = 0;//该版本下的方法总数
             int versionTestcases = 0;//该版本下的用例总数
             for(int i=0;i<interfacesList.size();i++){
